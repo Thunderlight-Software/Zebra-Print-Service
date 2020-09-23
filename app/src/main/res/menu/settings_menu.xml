@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/importPrinters"
+        android:title="@string/import_printers" />
+    <item android:id="@+id/exportPrinters"
+        android:title="@string/export_printers" />
+    <item android:id="@+id/removePrinters"
+        android:title="@string/remove_all_printers" />
+
+</menu>

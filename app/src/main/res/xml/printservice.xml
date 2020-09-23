@@ -1,0 +1,6 @@
+<print-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:vendor="Thunderlight software"
+    android:settingsActivity="com.zebra.zebraprintservice.activities.SettingsActivity"
+    android:addPrintersActivity="com.zebra.zebraprintservice.activities.AddActivity"
+    />

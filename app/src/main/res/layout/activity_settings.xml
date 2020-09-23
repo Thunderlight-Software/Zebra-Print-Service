@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    tools:context=".activities.SettingsActivity">
+
+    <!-- Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:padding="12dp"
+        android:orientation="vertical"
+        android:layout_weight="0.9">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/text"
+        android:layout_marginLeft="12dp"
+        android:text="@string/printer_service_information" />
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@android:color/darker_gray" android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text"
+            android:layout_marginLeft="12dp"
+            android:text="@string/zebra_printer_service" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/text"
+            android:layout_marginLeft="12dp"
+            android:text="@string/thunderlight_software" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@android:color/darker_gray" android:layout_marginTop="12dp" android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text"
+            android:layout_marginLeft="12dp"
+            android:text="@string/service_version" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/text"
+            android:layout_marginLeft="12dp"
+            android:id="@+id/serviceversion" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@android:color/darker_gray" android:layout_marginTop="12dp" android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text"
+            android:layout_marginLeft="12dp"
+            android:text="@string/rendering_engine_version" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginLeft="12dp"
+            android:textColor="@color/text"
+            android:id="@+id/version" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@android:color/darker_gray" android:layout_marginTop="12dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            style="@android:style/Widget.DeviceDefault.Button.Borderless"
+            android:onClick="onPermission"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:clickable="true">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text"
+            android:id="@+id/permissionState"
+            android:text="@string/permissions" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/text"
+            android:id="@+id/permissions"
+            android:text="@string/enable_permissions" />
+
+        </LinearLayout>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@android:color/darker_gray"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginTop="6dp"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif"
+        android:text="@string/vanity"
+        android:gravity="center_horizontal|bottom"
+        android:textColor="@color/text"
+        android:layout_marginBottom="10dp"
+        />
+
+</LinearLayout>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    tools:context=".activities.PrinterInfoActivity">
+
+    <!-- Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:padding="12dp"
+        android:orientation="vertical"
+        android:layout_weight="0.9">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text"
+            android:layout_marginLeft="12dp"
+            android:text="@string/printer_name" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:id="@+id/name"
+            android:singleLine="true"
+            android:textColor="@color/text"
+            android:nextFocusDown="@+id/width"
+            android:layout_marginLeft="12dp"
+            />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text"
+            android:layout_marginTop="12dp"
+            android:layout_marginLeft="12dp"
+            android:text="@string/media_size" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:layout_marginRight="12dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <!-- Width -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginLeft="12dp"
+                    android:text="@string/width" />
+
+                <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:id="@+id/width"
+                    android:textColor="@color/text"
+                    android:inputType="numberDecimal"
+                    android:nextFocusDown="@+id/height"
+                    android:layout_marginLeft="12dp"
+                    />
+            </LinearLayout>
+
+            <!-- Height -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginLeft="12dp"
+                    android:text="@string/height" />
+
+                <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:id="@+id/height"
+                    android:textColor="@color/text"
+                    android:inputType="numberDecimal"
+                    android:layout_marginLeft="12dp"
+                    />
+
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:id="@+id/cancel_button"
+            android:text="@string/cancel"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:id="@+id/submit_button"
+            android:text="@string/submit"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginTop="6dp"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif"
+        android:text="@string/vanity"
+        android:gravity="center_horizontal|bottom"
+        android:textColor="@color/text"
+        android:layout_marginBottom="10dp"
+        />
+
+</LinearLayout>
