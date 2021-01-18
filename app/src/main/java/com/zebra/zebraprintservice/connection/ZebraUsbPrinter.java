@@ -28,6 +28,7 @@ public class ZebraUsbPrinter extends PrinterConnection
     private static final boolean DEBUG = BuildConfig.DEBUG & true;
     private static final String ACTION_USB_PERMISSION = "com.zebra.USB_PERMISSION.Printer";
     private static final int USB_TIMEOUT = 1000;
+    private int MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE = 1024;
     private UsbManager mUsbManager;
     private UsbInterface mInterface = null;
     private UsbDeviceConnection mUsbConnection = null;
@@ -102,6 +103,26 @@ public class ZebraUsbPrinter extends PrinterConnection
     {
         mOutput.write(bData);
         mOutput.flush();
+    }
+
+    @Override
+    public void writeData(byte[] bData, WriteDataCallback callback) throws IOException {
+        int iSize = bData.length;
+        int iOff = 0;
+        while (iSize > 0)
+        {
+            int iLen = iSize > MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE ? MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE : iSize;
+            mOutput.write(bData, iOff, iLen);
+            mOutput.flush();
+            if(callback != null)
+                callback.onWriteData(iOff, iLen);
+            try
+            {
+                Thread.sleep(50);
+            }catch (Exception e) {}
+            iOff += iLen;
+            iSize -= iLen;
+        }
     }
     /*********************************************************************************************/
     @Override
