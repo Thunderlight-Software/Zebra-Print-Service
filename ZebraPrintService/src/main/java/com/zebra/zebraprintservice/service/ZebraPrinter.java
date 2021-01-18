@@ -453,6 +453,8 @@ public class ZebraPrinter implements Handler.Callback
                 }
             });
 
+            // Set mPdfToPrintAsByteArray to null for better garbage collection
+            mPdfToPrintAsByteArray = null;
         } catch (IOException e) {
             e.printStackTrace();
             fail(R.string.interror);
