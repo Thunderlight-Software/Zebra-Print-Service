@@ -66,7 +66,7 @@ public class ZebraPrinter implements Handler.Callback
     private int mLabelHeight = 0;
     private String mLanguage = "";
     private boolean mIsPDFDirectPrinter = false;
-    private byte[] mPdfAsByteArray = null;
+    private byte[] mPdfToPrintAsByteArray = null;
 
     public interface ConnectionCallback
     {
@@ -309,13 +309,16 @@ public class ZebraPrinter implements Handler.Callback
                             buffer.write(data, 0, nRead);
                         }
 
-                        mPdfAsByteArray = buffer.toByteArray();
+                        mPdfToPrintAsByteArray = buffer.toByteArray();
+
+                        buffer.close();
+                        in.close();
 
                         mMsgHandler.obtainMessage(MSG_SEND_PDF_DATA).sendToTarget();
 
                     }catch (Exception e)
                     {
-                        mPdfAsByteArray = null;
+                        mPdfToPrintAsByteArray = null;
                         if(DEBUG) e.printStackTrace();
                         fail(R.string.interror);
                     }
@@ -443,7 +446,7 @@ public class ZebraPrinter implements Handler.Callback
             if (checkStatus() == false) return;
 
             //Send to Printer
-            mConnection.writeData(mPdfAsByteArray, new PrinterConnection.WriteDataCallback() {
+            mConnection.writeData(mPdfToPrintAsByteArray, new PrinterConnection.WriteDataCallback() {
                 @Override
                 public void onWriteData(int iOffset, int iLength) {
                     setProgress((float) iOffset / (float) iLength);

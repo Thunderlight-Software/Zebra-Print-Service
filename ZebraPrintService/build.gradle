@@ -9,7 +9,7 @@ android {
         minSdkVersion 24
         targetSdkVersion 29
         versionCode 4
-        versionName "1.1.1"
+        versionName "1.1.2"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++14"
