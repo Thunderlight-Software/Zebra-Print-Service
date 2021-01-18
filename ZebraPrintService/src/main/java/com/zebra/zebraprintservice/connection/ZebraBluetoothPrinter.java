@@ -15,6 +15,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
+import androidx.annotation.RequiresPermission;
+
 public class ZebraBluetoothPrinter extends PrinterConnection
 {
     private static final String TAG = ZebraBluetoothPrinter.class.getSimpleName();
@@ -74,6 +76,26 @@ public class ZebraBluetoothPrinter extends PrinterConnection
             int iLen = iSize > MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE ? MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE : iSize;
             mOutput.write(bData, iOff, iLen);
             mOutput.flush();
+            try
+            {
+                Thread.sleep(50);
+            }catch (Exception e) {}
+            iOff += iLen;
+            iSize -= iLen;
+        }
+    }
+
+    @Override
+    public void writeData(byte[] bData, WriteDataCallback callback) throws IOException {
+        int iSize = bData.length;
+        int iOff = 0;
+        while (iSize > 0)
+        {
+            int iLen = iSize > MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE ? MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE : iSize;
+            mOutput.write(bData, iOff, iLen);
+            mOutput.flush();
+            if(callback != null)
+                callback.onWriteData(iOff, iLen);
             try
             {
                 Thread.sleep(50);

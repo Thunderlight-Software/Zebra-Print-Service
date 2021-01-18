@@ -23,6 +23,7 @@ import com.zebra.zebraprintservice.R;
 import com.zebra.zebraprintservice.connection.PrinterConnection;
 import com.zebra.zebraprintservice.database.PrinterDatabase;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,6 +43,7 @@ public class ZebraPrinter implements Handler.Callback
     private static final int MSG_GET_DETAILS            = 3;
     private static final int MSG_GET_JOB                = 4;
     private static final int MSG_QUIT                   = 5;
+    private static final int MSG_SEND_PDF_DATA          = 6;
     private static final int MAX_STATUS_RESPONSE        = 500;
     private int mPrinterStatus = PrinterInfo.STATUS_IDLE;
     private final List<PrintJob> mJobs = new CopyOnWriteArrayList<>();
@@ -63,6 +65,8 @@ public class ZebraPrinter implements Handler.Callback
     private int mLabelWidth = 0;
     private int mLabelHeight = 0;
     private String mLanguage = "";
+    private boolean mIsPDFDirectPrinter = false;
+    private byte[] mPdfAsByteArray = null;
 
     public interface ConnectionCallback
     {
@@ -232,6 +236,12 @@ public class ZebraPrinter implements Handler.Callback
                 if (DEBUG) Log.i(TAG,"Quit Msg Loop");
                 mMsgThread.quit();
                 break;
+
+            case MSG_SEND_PDF_DATA:
+                if (DEBUG) Log.i(TAG,"Send PDF Data to printer.");
+                MsgSendPDFData();
+                return true;
+
         }
         return false;
     }
@@ -283,30 +293,61 @@ public class ZebraPrinter implements Handler.Callback
             {
                 mCurrent.start();
                 PrintDocument doc = mCurrent.getDocument();
-                try
+                if(mIsPDFDirectPrinter)
                 {
-                    //Create a file copy of the document
-                    ParcelFileDescriptor inParcel = doc.getData();
-                    mTempFile = File.createTempFile(doc.getInfo().getName(), null, mService.getCacheDir());
-                    mTempFile.deleteOnExit();
+                    try
+                    {
+                        //Extract byte data from the document
+                        ParcelFileDescriptor inParcel = doc.getData();
 
-                    InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
-                    OutputStream out = new FileOutputStream(mTempFile);
-                    byte[] buf = new byte[8192];
-                    int r;
-                    while ((r = in.read(buf)) > -1) out.write(buf, 0, r);
-                    out.close();
-                    in.close();
+                        InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
+                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                        int nRead;
+                        byte[] data = new byte[16384];
 
-                    renderer = new PdfRenderer(ParcelFileDescriptor.open(mTempFile,ParcelFileDescriptor.MODE_READ_ONLY));
-                    mPageCount = renderer.getPageCount();
-                    mCurrentPage = 0;
-                    mMsgHandler.obtainMessage(MSG_NEXT_PAGE).sendToTarget();
+                        while ((nRead = in.read(data, 0, data.length)) != -1) {
+                            buffer.write(data, 0, nRead);
+                        }
 
-                }catch (Exception e)
+                        mPdfAsByteArray = buffer.toByteArray();
+
+                        mMsgHandler.obtainMessage(MSG_SEND_PDF_DATA).sendToTarget();
+
+                    }catch (Exception e)
+                    {
+                        mPdfAsByteArray = null;
+                        if(DEBUG) e.printStackTrace();
+                        fail(R.string.interror);
+                    }
+
+                }
+                else
                 {
-                    if(DEBUG) e.printStackTrace();
-                    fail(R.string.interror);
+                    try
+                    {
+                        //Create a file copy of the document
+                        ParcelFileDescriptor inParcel = doc.getData();
+                        mTempFile = File.createTempFile(doc.getInfo().getName(), null, mService.getCacheDir());
+                        mTempFile.deleteOnExit();
+
+                        InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
+                        OutputStream out = new FileOutputStream(mTempFile);
+                        byte[] buf = new byte[8192];
+                        int r;
+                        while ((r = in.read(buf)) > -1) out.write(buf, 0, r);
+                        out.close();
+                        in.close();
+
+                        renderer = new PdfRenderer(ParcelFileDescriptor.open(mTempFile,ParcelFileDescriptor.MODE_READ_ONLY));
+                        mPageCount = renderer.getPageCount();
+                        mCurrentPage = 0;
+                        mMsgHandler.obtainMessage(MSG_NEXT_PAGE).sendToTarget();
+
+                    }catch (Exception e)
+                    {
+                        if(DEBUG) e.printStackTrace();
+                        fail(R.string.interror);
+                    }
                 }
             }
         });
@@ -367,6 +408,7 @@ public class ZebraPrinter implements Handler.Callback
                 mPrintData.append("PRINT\r\n");
             }
             bitmap.recycle();
+
             page.close();
 
             //Check Printer Status
@@ -385,6 +427,35 @@ public class ZebraPrinter implements Handler.Callback
             if(DEBUG) e.printStackTrace();
             fail(R.string.interror);
         }
+    }
+
+    /**********************************************************************************************/
+    private void MsgSendPDFData()
+    {
+        // Request to cancel print ?
+        if (bCancelled == true)
+        {
+            cancelJob();
+            return;
+        }
+        //Check Printer Status
+        try {
+            if (checkStatus() == false) return;
+
+            //Send to Printer
+            mConnection.writeData(mPdfAsByteArray, new PrinterConnection.WriteDataCallback() {
+                @Override
+                public void onWriteData(int iOffset, int iLength) {
+                    setProgress((float) iOffset / (float) iLength);
+                }
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(R.string.interror);
+        }
+        // Finish the job.
+        finishJob();
     }
 
     /**********************************************************************************************/
@@ -415,6 +486,17 @@ public class ZebraPrinter implements Handler.Callback
                         {
                             resp = new String(bResponse, 0, respLen).toString().replace("\"", "");
                             mDPI = Integer.parseInt(resp);
+                        }
+                    }catch (Exception e) {}
+
+                    // Get apl status to check if we are dealing with a pdf direct printer
+                    try {
+                        mConnection.writeData("! U1 getvar \"apl.enable\"\r\n".getBytes());
+                        respLen = readInput(bResponse,MAX_STATUS_RESPONSE,true);
+                        if (respLen != 0)
+                        {
+                            resp = new String(bResponse, 0, respLen).toString().replace("\"", "");
+                            mIsPDFDirectPrinter = resp.equalsIgnoreCase("pdf");
                         }
                     }catch (Exception e) {}
 
@@ -460,8 +542,15 @@ public class ZebraPrinter implements Handler.Callback
             @Override
             public void run()
             {
-                checkFlushed();
-                renderer.close();
+                if(mIsPDFDirectPrinter)
+                {
+
+                }
+                else
+                {
+                    checkFlushed();
+                    renderer.close();
+                }
                 mTempFile.delete();
                 mCurrent.complete();
                 mMsgHandler.obtainMessage(MSG_START_JOB).sendToTarget();

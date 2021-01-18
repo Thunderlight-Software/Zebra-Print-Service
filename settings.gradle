@@ -1,2 +1,2 @@
-include ':app'
+include ':ZebraPrintService'
 rootProject.name='Zebra Print Service'

@@ -15,6 +15,7 @@ public class ZebraFilePrinter extends PrinterConnection
 {
     private static final String TAG = ZebraNetworkPrinter.class.getSimpleName();
     private static final boolean DEBUG = BuildConfig.DEBUG & true;
+    private int MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE = 1024;
     private PrinterDatabase.Printer mPrinter;
     private FileOutputStream mOutput = null;
     private ZebraInputStream mInput = null;
@@ -123,6 +124,37 @@ public class ZebraFilePrinter extends PrinterConnection
         mOutput.write(bData);
         mOutput.flush();
     }
+
+    @Override
+    public void writeData(byte[] bData, WriteDataCallback callback) throws IOException {
+
+        //Check if we need to respond to command
+        String sData = new String(bData,0,bData.length < 40 ? bData.length : 40);
+        if (sData.contains("device.languages")) { mInput.send(String.valueOf(mPrinter.mLanguage).getBytes()); return; }
+        if (sData.contains("ezpl.print_width")) { mInput.send(String.valueOf(mPrinter.mWidth).getBytes()); return; }
+        if (sData.contains("zpl.label_length")) { mInput.send(String.valueOf(mPrinter.mHeight).getBytes()); return; }
+        if (sData.contains("head.resolution.in_dpi")) { mInput.send(String.valueOf(mPrinter.mDPI).getBytes()); return; }
+        if (sData.startsWith("~HS")) { mInput.send(new byte[] { 0x02 }); mInput.send("0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0".getBytes()); return; };
+
+
+        int iSize = bData.length;
+        int iOff = 0;
+        while (iSize > 0)
+        {
+            int iLen = iSize > MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE ? MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE : iSize;
+            mOutput.write(bData, iOff, iLen);
+            mOutput.flush();
+            if(callback != null)
+                callback.onWriteData(iOff, iLen);
+            try
+            {
+                Thread.sleep(50);
+            }catch (Exception e) {}
+            iOff += iLen;
+            iSize -= iLen;
+        }
+    }
+
     /*********************************************************************************************/
     private class ZebraInputStream extends InputStream
     {
