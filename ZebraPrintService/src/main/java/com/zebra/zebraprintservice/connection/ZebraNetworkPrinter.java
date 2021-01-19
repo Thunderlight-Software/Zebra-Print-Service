@@ -17,6 +17,7 @@ public class ZebraNetworkPrinter extends PrinterConnection
 {
     private static final String TAG = ZebraNetworkPrinter.class.getSimpleName();
     private static final boolean DEBUG = BuildConfig.DEBUG & true;
+    private int MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE = 1024;
     private Socket mConnection = null;
     private PrinterDatabase.Printer mPrinter;
     private Context mCtx;
@@ -66,6 +67,26 @@ public class ZebraNetworkPrinter extends PrinterConnection
     {
         mOutput.write(bData);
         mOutput.flush();
+    }
+
+    @Override
+    public void writeData(byte[] bData, WriteDataCallback callback) throws IOException {
+        int iSize = bData.length;
+        int iOff = 0;
+        while (iSize > 0)
+        {
+            int iLen = iSize > MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE ? MAX_DATA_TO_WRITE_TO_STREAM_AT_ONCE : iSize;
+            mOutput.write(bData, iOff, iLen);
+            mOutput.flush();
+            if(callback != null)
+                callback.onWriteData(iOff, iLen);
+            try
+            {
+                Thread.sleep(50);
+            }catch (Exception e) {}
+            iOff += iLen;
+            iSize -= iLen;
+        }
     }
 
     /*********************************************************************************************/
