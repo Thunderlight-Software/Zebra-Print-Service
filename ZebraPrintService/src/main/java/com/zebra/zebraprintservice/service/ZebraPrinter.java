@@ -453,8 +453,7 @@ public class ZebraPrinter implements Handler.Callback
                 }
             });
 
-            // Set mPdfToPrintAsByteArray to null for better garbage collection
-            mPdfToPrintAsByteArray = null;
+
         } catch (IOException e) {
             e.printStackTrace();
             fail(R.string.interror);
@@ -549,14 +548,15 @@ public class ZebraPrinter implements Handler.Callback
             {
                 if(mIsPDFDirectPrinter)
                 {
-
+                    // Set mPdfToPrintAsByteArray to null for better garbage collection
+                    mPdfToPrintAsByteArray = null;
                 }
                 else
                 {
                     checkFlushed();
                     renderer.close();
+                    mTempFile.delete();
                 }
-                mTempFile.delete();
                 mCurrent.complete();
                 mMsgHandler.obtainMessage(MSG_START_JOB).sendToTarget();
             }

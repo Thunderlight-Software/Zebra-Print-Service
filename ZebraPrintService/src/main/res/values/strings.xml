@@ -45,4 +45,80 @@
     <string name="submit">Submit</string>
     <string name="printer_name">Printer name:</string>
     <string name="unknown_device">Unknown Device</string>
+
+    <!-- Restrictions -->
+    <string name="printer_list_title">Printers list</string>
+    <string name="printer_list_description">The list of printers to setup on the device</string>
+
+    <string name="printer_title">Printer Settings</string>
+    <string name="printer_description">Setup each printers configuration here.</string>
+
+    <string name="printer_name_title">Printer name</string>
+    <string name="printer_name_description">Friendly name of the printer</string>
+    <string name="printer_name_default_value">ZQ320L</string>
+
+    <string name="printer_description_title">Printer description</string>
+    <string name="printer_description_description">Description of the printer</string>
+    <string name="printer_description_default_value">Office Networked ZQ320L</string>
+
+    <string name="printer_type_title">Printer connexion</string>
+    <string name="printer_type_description">The type of the printer connexion : network or bluetooth</string>
+    <string name="printer_type_default_value">@string/value_network_printer</string>
+    <string-array name="printer_type_entries">
+        <item>@string/entry_network_printer</item>
+        <item>@string/entry_bluetooth_printer</item>
+        <item>@string/entry_usb_printer</item>
+        <!--item>@string/entry_file_printer</item-->
+    </string-array>
+    <string-array name="printer_type_entries_values">
+        <item>@string/value_network_printer</item>
+        <item>@string/value_bluetooth_printer</item>
+        <item>@string/value_usb_printer</item>
+        <!--item>@string/value_file_printer</item-->
+    </string-array>
+    <string name="entry_network_printer">Network Printer</string>
+    <string name="entry_bluetooth_printer">Bluetooth Printer</string>
+    <string name="entry_usb_printer">USB Printer</string>
+    <string name="entry_file_printer">File Printer</string>
+    <string name="value_network_printer">network</string>
+    <string name="value_bluetooth_printer">bt</string>
+    <string name="value_usb_printer">usb</string>
+    <string name="value_file_printer">file</string>
+
+    <string name="printer_address_title">Printer address</string>
+    <string name="printer_address_description">The address of the printer. This can be a Mac address for a bluetooth printer, or an IP address for a Network printer</string>
+    <string name="printer_address_default_value">192.168.1.3</string>
+
+    <string name="printer_port_title">Printer port</string>
+    <string name="printer_port_description">The port of the printer, if this printer is connected through the network (WIFI, LAN), unused for a bluetooth/usb/file printer.</string>
+    <integer name="printer_port_default_value">9100</integer>
+
+    <string name="printer_dpi_title">Printer DPI</string>
+    <string name="printer_dpi_description">The resolution of the printer in DPI (Dots per Inches)</string>
+    <integer name="printer_dpi_default_value">203</integer>
+
+    <string name="printer_label_size_unit_title">Paper Size Unit</string>
+    <string name="printer_label_size_unit_description">The unit of the paper size (cm or inches)</string>
+    <string name="printer_label_size_unit_default_value">"@string/value_label_size_unit_inches"</string>
+    <string-array name="printer_label_size_unit_entries">
+        <item>@string/entry_label_size_unit_cm</item>
+        <item>@string/entry_label_size_unit_inches</item>
+    </string-array>
+    <string-array name="printer_label_size_unit_entries_values">
+        <item>@string/value_label_size_unit_cm</item>
+        <item>@string/value_label_size_unit_inches</item>
+    </string-array>
+    <string name="entry_label_size_unit_cm">Centimeters</string>
+    <string name="entry_label_size_unit_inches">Inches</string>
+    <string name="value_label_size_unit_cm">cm</string>
+    <string name="value_label_size_unit_inches">inches</string>
+
+    <string name="printer_label_width_title">Paper Width</string>
+    <string name="printer_label_width_description">The width of the paper</string>
+    <string name="printer_label_width_default_value">3.15</string>
+
+    <string name="printer_label_height_title">Paper Width</string>
+    <string name="printer_label_height_description">The width of the paper</string>
+    <string name="printer_label_height_default_value">10</string>
+
 </resources>

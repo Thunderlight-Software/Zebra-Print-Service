@@ -1,6 +1,12 @@
 package com.zebra.zebraprintservice.service;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.RestrictionsManager;
 import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.print.PrinterId;
 import android.printservice.PrintJob;
 import android.printservice.PrintService;
@@ -16,12 +22,15 @@ import com.zebra.zebraprintservice.connection.ZebraFilePrinter;
 import com.zebra.zebraprintservice.connection.ZebraNetworkPrinter;
 import com.zebra.zebraprintservice.connection.ZebraUsbPrinter;
 import com.zebra.zebraprintservice.database.PrinterDatabase;
+import com.zebra.zebraprintservice.managedconfiguration.APP_Restrictions_Changed_BroadcastReceiver;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+@SuppressWarnings("JavaJniMissingFunction")
 public class ZebraPrintService extends PrintService
 {
     private static final String TAG = ZebraPrintService.class.getSimpleName();
@@ -30,6 +39,7 @@ public class ZebraPrintService extends PrintService
     public static native String getUtilsVersion();
     public static native String createBitmapZPL(Bitmap bitmap);
     public static native String createBitmapCPC(Bitmap bitmap);
+    private APP_Restrictions_Changed_BroadcastReceiver app_restrictions_changed_broadcastReceiver = new APP_Restrictions_Changed_BroadcastReceiver();
 
     static {
         System.loadLibrary("ZebraUtils");
@@ -41,6 +51,7 @@ public class ZebraPrintService extends PrintService
     {
         if (DEBUG) Log.d(TAG, "onCreate() ");
         super.onCreate();
+        readConfigFromManagedConfiguration();
     }
 
     /**********************************************************************************************/
@@ -64,6 +75,7 @@ public class ZebraPrintService extends PrintService
     {
         if (DEBUG) Log.d(TAG, "onConnected()");
         super.onConnected();
+        registerManagedConfigurationChangeBroadcastReceiver();
     }
 
     /**********************************************************************************************/
@@ -72,6 +84,7 @@ public class ZebraPrintService extends PrintService
     {
         if (DEBUG) Log.d(TAG, "onDisconnected()");
         super.onDisconnected();
+        unregisterManagedConfigurationChangeBroadcastReceiver();
     }
 
     /**********************************************************************************************/
@@ -130,5 +143,108 @@ public class ZebraPrintService extends PrintService
         }
         mDb.close();
         return result;
+    }
+
+    /**********************************************************************************************/
+    private void readConfigFromManagedConfiguration() {
+        Log.d(TAG, "Managed config");
+        RestrictionsManager myRestrictionsMgr =
+                (RestrictionsManager) getApplicationContext().getSystemService(Context.RESTRICTIONS_SERVICE);
+        Bundle appRestrictions = myRestrictionsMgr.getApplicationRestrictions();
+        Log.d(TAG, "Managed config" + appRestrictions.toString());
+
+        Parcelable[] printers_lists = appRestrictions.getParcelableArray("printers_list");
+        if(printers_lists != null && printers_lists.length > 0)
+        {
+            // The managed config contains a printer list
+            // Get the database object
+            PrinterDatabase mDb = new PrinterDatabase(this);
+
+            // Remove all printers from database
+            mDb.deleteAll();
+
+            for(int i = 0; i < printers_lists.length; i++)
+            {
+                Bundle printer = (Bundle)printers_lists[i];
+                // Log some data for debugging purposes
+                Log.d(TAG, "********************************************************************");
+                Log.d(TAG, "Managed config: Printer description (" + i + "/" + printers_lists.length  +")");
+                Log.d(TAG, "Managed config, name: " + printer.getString("name"));
+                Log.d(TAG, "Managed config, address: " + printer.getString("address"));
+                Log.d(TAG, "Managed config, description: " + printer.getString("description"));
+                Log.d(TAG, "Managed config, type: " + printer.getString("type"));
+                Log.d(TAG, "Managed config, address: " + printer.getString("address"));
+                Log.d(TAG, "Managed config, port: " + printer.getInt("port"));
+                Log.d(TAG, "Managed config, dpi: " + printer.getInt("dpi"));
+                Log.d(TAG, "Managed config, label size unit: " + printer.getString("unit"));
+                Log.d(TAG, "Managed config, width: " + printer.getString("width"));
+                Log.d(TAG, "Managed config, height: " + printer.getString("height"));
+
+                // Create a Database Printer object
+                PrinterDatabase.Printer dbPrinter = new PrinterDatabase.Printer();
+                dbPrinter.mName = printer.getString("name");
+                dbPrinter.mAddress = printer.getString("address");
+                dbPrinter.mDescription = printer.getString("description");
+                dbPrinter.mType = printer.getString("type");
+                dbPrinter.mAddress = printer.getString("address");
+                if(dbPrinter.mType.equalsIgnoreCase("network"))
+                {
+                    // Fill the port only for networked printers
+                    dbPrinter.mPort = printer.getInt("port");
+                }
+                else
+                {
+                    // Leave to zero for non networked printers
+                    dbPrinter.mPort = 0;
+                }
+                dbPrinter.mDPI = printer.getInt("dpi");
+                String labelSizeUnit = printer.getString("unit");
+
+                // Retrieve width and height as float values
+                float fWidth = Float.parseFloat(printer.getString("width"));
+                float fHeight = Float.parseFloat(printer.getString("height"));
+
+                if(labelSizeUnit.equalsIgnoreCase("inches"))
+                {
+                    dbPrinter.mWidth = (int)(fWidth * dbPrinter.mDPI);
+                    dbPrinter.mHeight = (int)(fHeight * dbPrinter.mDPI);
+                }
+                else
+                {
+                    dbPrinter.mWidth = (int)(fWidth * 0.393701f * dbPrinter.mDPI);
+                    dbPrinter.mHeight = (int)(fHeight * 0.393701f * dbPrinter.mDPI);
+                }
+
+                switch(dbPrinter.mType)
+                {
+                    case "network":
+                        dbPrinter.mPrinterId = "tcp:" + dbPrinter.mAddress;
+                        break;
+                    case "bt":
+                        dbPrinter.mPrinterId = "bt:" + dbPrinter.mAddress;
+                        break;
+                    case "usb":
+                        dbPrinter.mPrinterId = "usb:" + dbPrinter.mName;
+                        break;
+                }
+                dbPrinter.mPrinter = dbPrinter.mName;
+                dbPrinter.mTimeStamp = new Date();
+
+                // Add the printer to the database
+                mDb.insertPrinter(dbPrinter);
+            }
+            mDb.close();
+        }
+    }
+
+    private void registerManagedConfigurationChangeBroadcastReceiver()
+    {
+        IntentFilter restrictionFilter = new IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED);
+        registerReceiver(app_restrictions_changed_broadcastReceiver, restrictionFilter);
+    }
+
+    private void unregisterManagedConfigurationChangeBroadcastReceiver()
+    {
+        unregisterReceiver(app_restrictions_changed_broadcastReceiver);
     }
 }

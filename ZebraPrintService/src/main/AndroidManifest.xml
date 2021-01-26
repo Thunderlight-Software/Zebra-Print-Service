@@ -28,6 +28,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <meta-data android:name="android.content.APP_RESTRICTIONS"
+            android:resource="@xml/app_restrictions" />
+
         <activity
             android:name=".activities.PrinterInfoActivity"
             android:autoRemoveFromRecents="true" />

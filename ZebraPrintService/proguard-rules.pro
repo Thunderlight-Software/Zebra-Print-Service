@@ -19,10 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+#noinspection ShrinkerUnresolvedReference
 -keepclassmembers class **.ZebraPrintService {
     native <methods>;
+    #noinspection ShrinkerUnresolvedReference
     String getUtilsVersion();
+    #noinspection ShrinkerUnresolvedReference,ShrinkerUnresolvedReference
     String createBitmapZPL(Bitmap);
+    #noinspection ShrinkerUnresolvedReference,ShrinkerUnresolvedReference
     String createBitmapCPC(Bitmap);
 }
 
