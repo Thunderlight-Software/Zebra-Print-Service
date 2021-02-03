@@ -8,8 +8,8 @@ android {
         applicationId "com.zebra.zebraprintservice"
         minSdkVersion 24
         targetSdkVersion 29
-        versionCode 15
-        versionName "1.1.3"
+        versionCode 26
+        versionName "1.1.4"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++14"
@@ -54,5 +54,6 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'com.google.android.material:material:+'
     implementation 'org.parceler:parceler-api:1.1.12'
+    implementation 'androidx.enterprise:enterprise-feedback:+'
     annotationProcessor 'org.parceler:parceler:1.1.12'
 }
