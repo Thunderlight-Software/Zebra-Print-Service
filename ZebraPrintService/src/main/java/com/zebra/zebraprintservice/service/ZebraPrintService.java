@@ -1,6 +1,12 @@
 package com.zebra.zebraprintservice.service;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.RestrictionsManager;
 import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.print.PrinterId;
 import android.printservice.PrintJob;
 import android.printservice.PrintService;
@@ -16,12 +22,16 @@ import com.zebra.zebraprintservice.connection.ZebraFilePrinter;
 import com.zebra.zebraprintservice.connection.ZebraNetworkPrinter;
 import com.zebra.zebraprintservice.connection.ZebraUsbPrinter;
 import com.zebra.zebraprintservice.database.PrinterDatabase;
+import com.zebra.zebraprintservice.managedconfiguration.APP_Restrictions_Changed_BroadcastReceiver;
+import com.zebra.zebraprintservice.managedconfiguration.ManagedConfigurationHelper;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+@SuppressWarnings("JavaJniMissingFunction")
 public class ZebraPrintService extends PrintService
 {
     private static final String TAG = ZebraPrintService.class.getSimpleName();
@@ -30,6 +40,7 @@ public class ZebraPrintService extends PrintService
     public static native String getUtilsVersion();
     public static native String createBitmapZPL(Bitmap bitmap);
     public static native String createBitmapCPC(Bitmap bitmap);
+    private APP_Restrictions_Changed_BroadcastReceiver app_restrictions_changed_broadcastReceiver = new APP_Restrictions_Changed_BroadcastReceiver();
 
     static {
         System.loadLibrary("ZebraUtils");
@@ -41,6 +52,7 @@ public class ZebraPrintService extends PrintService
     {
         if (DEBUG) Log.d(TAG, "onCreate() ");
         super.onCreate();
+        ManagedConfigurationHelper.readConfigFromManagedConfiguration(this);
     }
 
     /**********************************************************************************************/
@@ -64,6 +76,7 @@ public class ZebraPrintService extends PrintService
     {
         if (DEBUG) Log.d(TAG, "onConnected()");
         super.onConnected();
+        registerManagedConfigurationChangeBroadcastReceiver();
     }
 
     /**********************************************************************************************/
@@ -72,6 +85,7 @@ public class ZebraPrintService extends PrintService
     {
         if (DEBUG) Log.d(TAG, "onDisconnected()");
         super.onDisconnected();
+        unregisterManagedConfigurationChangeBroadcastReceiver();
     }
 
     /**********************************************************************************************/
@@ -130,5 +144,16 @@ public class ZebraPrintService extends PrintService
         }
         mDb.close();
         return result;
+    }
+
+    private void registerManagedConfigurationChangeBroadcastReceiver()
+    {
+        IntentFilter restrictionFilter = new IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED);
+        registerReceiver(app_restrictions_changed_broadcastReceiver, restrictionFilter);
+    }
+
+    private void unregisterManagedConfigurationChangeBroadcastReceiver()
+    {
+        unregisterReceiver(app_restrictions_changed_broadcastReceiver);
     }
 }

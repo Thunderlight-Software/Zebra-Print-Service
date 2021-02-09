@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <restriction
+        android:key="printers_list"
+        android:title="@string/printer_list_title"
+        android:description="@string/printer_list_description"
+        android:restrictionType="bundle_array">
+        <restriction
+            android:key="printer"
+            android:title="@string/printer_title"
+            android:description="@string/printer_description"
+            android:restrictionType="bundle">
+
+            <restriction
+                android:key="name"
+                android:title="@string/printer_name_title"
+                android:restrictionType="string"
+                android:description="@string/printer_name_description"
+                android:defaultValue="@string/printer_name_default_value" />
+
+            <restriction
+                android:key="description"
+                android:title="@string/printer_description_title"
+                android:restrictionType="string"
+                android:description="@string/printer_description_description"
+                android:defaultValue="@string/printer_description_default_value" />
+
+            <!-- Choice restriction for printer connexion type -->
+            <restriction
+                android:key="type"
+                android:title="@string/printer_type_title"
+                android:defaultValue="@string/printer_type_default_value"
+                android:description="@string/printer_type_description"
+                android:entries="@array/printer_type_entries"
+                android:entryValues="@array/printer_type_entries_values"
+                android:restrictionType="choice"/>
+
+            <restriction
+                android:key="address"
+                android:title="@string/printer_address_title"
+                android:restrictionType="string"
+                android:description="@string/printer_address_description"
+                android:defaultValue="@string/printer_address_default_value" />
+
+
+            <restriction
+                android:key="port"
+                android:title="@string/printer_port_title"
+                android:restrictionType="integer"
+                android:description="@string/printer_port_description"
+                android:defaultValue="@integer/printer_port_default_value" />
+
+             <restriction
+                android:key="dpi"
+                android:title="@string/printer_dpi_title"
+                android:restrictionType="integer"
+                android:description="@string/printer_dpi_description"
+                android:defaultValue="@integer/printer_dpi_default_value" />
+
+            <!-- Choice restriction for label size unit -->
+
+            <restriction
+                android:key="unit"
+                android:title="@string/printer_label_size_unit_title"
+                android:defaultValue="@string/printer_label_size_unit_default_value"
+                android:description="@string/printer_label_size_unit_description"
+                android:entries="@array/printer_label_size_unit_entries"
+                android:entryValues="@array/printer_label_size_unit_entries_values"
+                android:restrictionType="choice"/>
+
+             <restriction
+                android:key="width"
+                android:title="@string/printer_label_width_title"
+                android:restrictionType="string"
+                android:description="@string/printer_label_width_description"
+                android:defaultValue="@string/printer_label_width_default_value" />
+
+             <restriction
+                android:key="height"
+                android:title="@string/printer_label_height_title"
+                android:restrictionType="string"
+                android:description="@string/printer_label_height_description"
+                android:defaultValue="@string/printer_label_height_default_value" />
+
+        </restriction>
+    </restriction>
+</restrictions>
