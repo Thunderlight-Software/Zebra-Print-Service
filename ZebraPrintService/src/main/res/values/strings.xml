@@ -117,8 +117,8 @@
     <string name="printer_label_width_description">The width of the paper</string>
     <string name="printer_label_width_default_value">3.15</string>
 
-    <string name="printer_label_height_title">Paper Width</string>
-    <string name="printer_label_height_description">The width of the paper</string>
+    <string name="printer_label_height_title">Paper Height</string>
+    <string name="printer_label_height_description">The height of the paper</string>
     <string name="printer_label_height_default_value">10</string>
 
 </resources>
