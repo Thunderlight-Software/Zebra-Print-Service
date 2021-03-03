@@ -8,8 +8,8 @@ android {
         applicationId "com.zebra.zebraprintservice"
         minSdkVersion 24
         targetSdkVersion 29
-        versionCode 26
-        versionName "1.1.4"
+        versionCode 27
+        versionName "1.1.5"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++14"
