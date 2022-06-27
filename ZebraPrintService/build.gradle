@@ -5,7 +5,7 @@ android {
     ndkVersion "21.0.6113669"
     buildToolsVersion "29.0.2"
     defaultConfig {
-        applicationId "com.zebra.zebraprintservice"
+        applicationId "com.zebra.zebraprintservice.lt"
         minSdkVersion 24
         targetSdkVersion 29
         versionCode 27
