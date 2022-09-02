@@ -40,7 +40,8 @@
             android:name=".activities.PdfPrintActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/print"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -53,7 +54,8 @@
             android:name=".activities.ImagePrintActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/print"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

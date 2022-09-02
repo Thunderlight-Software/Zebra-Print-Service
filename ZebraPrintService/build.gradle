@@ -1,13 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 32
     ndkVersion "21.0.6113669"
-    buildToolsVersion "29.0.2"
     defaultConfig {
-        applicationId "com.zebra.zebraprintservice.lt"
+        applicationId "com.zebra.zebraprintservice"
         minSdkVersion 24
-        targetSdkVersion 29
+        targetSdkVersion 32
         versionCode 27
         versionName "1.1.5"
         externalNativeBuild {
@@ -21,12 +20,6 @@ android {
     }
 
     //TODO: Added by Laurent Trudu because building a signed release apk doesn't work when the debug build has no pb. Need to understand why the Release build does not pass the lint stage.
-    lintOptions {
-        checkReleaseBuilds false
-        // Or, if you prefer, you can continue to check for errors in release builds,
-        // but continue the build even when errors are found:
-        abortOnError false
-    }
 
 
     buildTypes {
@@ -45,6 +38,10 @@ android {
             path "src/main/cpp/CMakeLists.txt"
             version "3.10.2"
         }
+    }
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
     }
 }
 
