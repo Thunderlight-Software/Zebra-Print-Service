@@ -1,5 +1,6 @@
 package com.zebra.zebraprintservice.activities;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
@@ -9,12 +10,15 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -23,6 +27,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 
 import com.zebra.zebraprintservice.BuildConfig;
 import com.zebra.zebraprintservice.NetworkDevice;
@@ -73,6 +78,34 @@ public class AddActivity extends Activity
     private PrinterAdapter mPrinterAdapter;
     private Context mCtx;
 
+
+    /***********************************************************************************************/
+    /** Permissions management                                                                     */
+    /***********************************************************************************************/
+    private static final int ZEBRA_PRINTSERVICE_PERMISSION = 1;
+    private static ArrayList<String> ZEBRA_PRINTSERVICE_PERMISSIONS_LIST = new ArrayList<String>(){{
+        add(Manifest.permission.ACCESS_WIFI_STATE);
+        add(Manifest.permission.INTERNET);
+        add(Manifest.permission.BLUETOOTH_ADMIN);
+        add(Manifest.permission.BLUETOOTH);
+        add(Manifest.permission.ACCESS_FINE_LOCATION);
+        add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        add(Manifest.permission.WAKE_LOCK);
+        add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    }};
+
+    private static final ArrayList<String>  ZEBRA_PRINTSERVICE_PERMISSIONS_LIST_A12 = new ArrayList<String>(){{
+        add(Manifest.permission.BLUETOOTH_CONNECT);
+        add(Manifest.permission.BLUETOOTH_SCAN);
+        addAll(ZEBRA_PRINTSERVICE_PERMISSIONS_LIST);
+    }};
+
+    // Return intent action. Used to get result when we asked the system to display a popup to grant
+    // permission to an usb printer.
+    private static String ACTION_USB_PERMISSION = "com.zebra.zebraprintservice.USB_PERMISSION";
+
+
+
     /***********************************************************************************************/
     @Override
     @SuppressLint("all")
@@ -97,14 +130,8 @@ public class AddActivity extends Activity
         mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         if (mBluetoothManager != null) mBluetoothAdapter = mBluetoothManager.getAdapter();
 
-        //Find USB Printers
-        findUsbPrinters();
-
-        //Add any Network Printers
-        findNetPrinter();
-
-        //Find already paired devices.
-        findPairedBluetooth();
+        mExpireThread = new Thread(ExpireThread);
+        mExpireThread.start();
 
         //Register USB Receivers
         registerReceiver(mUsbReceiver,new IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED));
@@ -113,11 +140,11 @@ public class AddActivity extends Activity
         //Register Network Receiver
         registerReceiver(mNetReceiver,new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
-        mExpireThread = new Thread(ExpireThread);
-        mExpireThread.start();
+        checkPermissions();
     }
 
     /***********************************************************************************************/
+    @SuppressLint("MissingPermission")
     @Override
     protected void onResume()
     {
@@ -126,13 +153,11 @@ public class AddActivity extends Activity
         registerReceiver(mBTReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
         registerReceiver(mBTReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
         registerReceiver(mBTReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-        if (mBluetoothAdapter != null && !mBluetoothAdapter.isDiscovering()) mBluetoothAdapter.startDiscovery();
-        mStoredList = mDb.getAllPrinters();
-        findPairedBluetooth();
     }
 
     /***********************************************************************************************/
     @Override
+    @SuppressLint("MissingPermission")
     protected void onPause()
     {
         super.onPause();
@@ -179,6 +204,108 @@ public class AddActivity extends Activity
         }
         return super.onMenuItemSelected(featureId, item);
     }
+
+    /***********************************************************************************************/
+    /**                              Check Permissions                                             */
+    /***********************************************************************************************/
+    @SuppressLint("MissingPermission")
+    private void findPrinters()
+    {
+        //Find USB Printers
+        findUsbPrinters();
+
+        //Add any Network Printers
+        findNetPrinter();
+
+        //Find already paired devices.
+        findPairedBluetooth();
+
+        if (mBluetoothAdapter != null && !mBluetoothAdapter.isDiscovering()) mBluetoothAdapter.startDiscovery();
+        mStoredList = mDb.getAllPrinters();
+    }
+
+    /***********************************************************************************************/
+    /** Check if we have the necessary permissions, all methods are here **/
+    private void checkPermissions()
+    {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        {
+            ZEBRA_PRINTSERVICE_PERMISSIONS_LIST = ZEBRA_PRINTSERVICE_PERMISSIONS_LIST_A12;
+            if(DEBUG) Log.d(TAG, "Adding A12 permissions");
+
+        }
+        boolean shouldNotRequestPermissions = true;
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
+            for(String permission : ZEBRA_PRINTSERVICE_PERMISSIONS_LIST)
+            {
+                boolean granted = (checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED);
+                if(granted == false)
+                {
+                    if(DEBUG) Log.d(TAG, "Permission: " + permission + " is not granted.");
+                }
+                shouldNotRequestPermissions &= granted;
+            }
+        }
+
+        if (shouldNotRequestPermissions) {
+            if(DEBUG) Log.d(TAG, "All necessary permissions have already been granted before.");
+            findPrinters();
+        }
+        else
+        {
+            // Some permissions are missing, let's ask for them
+            if(DEBUG) Log.d(TAG, "Permissions are missing, sending permission intent to solve the issue.");
+            String[] permissions = ZEBRA_PRINTSERVICE_PERMISSIONS_LIST.toArray(new String[0]);
+            this.requestPermissions(permissions, ZEBRA_PRINTSERVICE_PERMISSION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,  String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case ZEBRA_PRINTSERVICE_PERMISSION:
+                boolean allPermissionGranted = true;
+                for(int grantResult : grantResults)
+                {
+                    allPermissionGranted &= (grantResult == PackageManager.PERMISSION_GRANTED);
+                }
+                if (allPermissionGranted) {
+                    if(DEBUG) Log.d(TAG, "All permission granted successfully :)");
+                    findPrinters();
+                } else {
+                    ShowAlertDialog(AddActivity.this, "Error", "Please grant the necessary permission to launch the application.");
+                }
+                return;
+        }
+    }
+
+    private void ShowAlertDialog(Context context, String title, String message)
+    {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                context);
+
+        // set title
+        alertDialogBuilder.setTitle(title);
+
+        // set dialog message
+        alertDialogBuilder
+                .setMessage(message)
+                .setCancelable(false)
+                .setPositiveButton("OK",new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog,int id) {
+                        // if this button is clicked, close
+                        // current activity
+                        checkPermissions();
+                    }
+                });
+
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
+    }
+
 
     /***********************************************************************************************/
     private AdapterView.OnItemClickListener listClick = new AdapterView.OnItemClickListener()
@@ -273,6 +400,7 @@ public class AddActivity extends Activity
     }
 
     /**********************************************************************************************/
+    @SuppressLint("MissingPermission")
     private void findPairedBluetooth()
     {
         if (mBluetoothAdapter == null) return;
@@ -307,6 +435,7 @@ public class AddActivity extends Activity
     }
 
     /**********************************************************************************************/
+    @SuppressLint("MissingPermission")
     private final BroadcastReceiver mBTReceiver = new BroadcastReceiver()
     {
         public void onReceive(Context context, Intent intent)

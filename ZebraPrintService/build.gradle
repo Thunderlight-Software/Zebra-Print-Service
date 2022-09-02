@@ -7,8 +7,8 @@ android {
         applicationId "com.zebra.zebraprintservice"
         minSdkVersion 24
         targetSdkVersion 32
-        versionCode 27
-        versionName "1.1.5"
+        versionCode 28
+        versionName "1.1.6"
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++14"
@@ -18,9 +18,6 @@ android {
             abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
         }
     }
-
-    //TODO: Added by Laurent Trudu because building a signed release apk doesn't work when the debug build has no pb. Need to understand why the Release build does not pass the lint stage.
-
 
     buildTypes {
         release {
@@ -39,6 +36,7 @@ android {
             version "3.10.2"
         }
     }
+    //TODO: Added by Laurent Trudu because building a signed release apk doesn't work when the debug build has no pb. Need to understand why the Release build does not pass the lint stage.
     lint {
         abortOnError false
         checkReleaseBuilds false
