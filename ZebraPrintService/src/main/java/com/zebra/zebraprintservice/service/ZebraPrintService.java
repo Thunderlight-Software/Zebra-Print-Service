@@ -84,8 +84,8 @@ public class ZebraPrintService extends PrintService
     protected void onDisconnected()
     {
         if (DEBUG) Log.d(TAG, "onDisconnected()");
-        super.onDisconnected();
         unregisterManagedConfigurationChangeBroadcastReceiver();
+        super.onDisconnected();
     }
 
     /**********************************************************************************************/
@@ -154,6 +154,17 @@ public class ZebraPrintService extends PrintService
 
     private void unregisterManagedConfigurationChangeBroadcastReceiver()
     {
-        unregisterReceiver(app_restrictions_changed_broadcastReceiver);
+        try
+        {
+            unregisterReceiver(app_restrictions_changed_broadcastReceiver);
+        }
+        catch(Exception e)
+        {
+            if(DEBUG)
+            {
+                Log.e(TAG, "Error in unregisterManagedConfigurationChangeBroadcastReceiver");
+                e.printStackTrace();
+            }
+        }
     }
 }
