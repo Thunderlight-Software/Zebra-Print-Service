@@ -330,7 +330,7 @@ public class ZebraPrinter implements Handler.Callback
                     {
                         //Create a file copy of the document
                         ParcelFileDescriptor inParcel = doc.getData();
-                        mTempFile = File.createTempFile(doc.getInfo().getName(), null, mService.getCacheDir());
+                        mTempFile = File.createTempFile(doc.getInfo().getName().replaceAll("[\\\\/:*?\"<>|]", ""), null, mService.getCacheDir());
                         mTempFile.deleteOnExit();
 
                         InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
