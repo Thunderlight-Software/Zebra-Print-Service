@@ -9,6 +9,7 @@ import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.print.PrintAttributes;
 import android.print.PrintJobId;
+import android.print.PrintJobInfo;
 import android.print.PrinterCapabilitiesInfo;
 import android.print.PrinterId;
 import android.print.PrinterInfo;
@@ -58,6 +59,8 @@ public class ZebraPrinter implements Handler.Callback
     private PdfRenderer renderer = null;
     private StringBuilder mPrintData = new StringBuilder();
     private File mTempFile;
+    private int mNbCopies = 0;
+    private int mCurrentCopy = 0;
     private int mPageCount = 0;
     private int mCurrentPage = 0;
     private boolean bCancelled = false;
@@ -293,6 +296,12 @@ public class ZebraPrinter implements Handler.Callback
             {
                 mCurrent.start();
                 PrintDocument doc = mCurrent.getDocument();
+                PrintJobInfo jobInfo = mCurrent.getInfo();
+                if(jobInfo != null)
+                    mNbCopies = jobInfo.getCopies();
+                else
+                    mNbCopies = 1;
+                mCurrentCopy = 0;
                 if(mIsPDFDirectPrinter)
                 {
                     try
@@ -360,12 +369,21 @@ public class ZebraPrinter implements Handler.Callback
     private void MsgNextPage()
     {
         boolean bCheckPrinter = false;
+        boolean isCPCLPrinter = mLanguage.contains("line_print");
         try
         {
             //Have we Finished ?
-            if (mCurrentPage == mPageCount)
+            if (mCurrentPage >= mPageCount)
             {
-                finishJob();
+                mCurrentCopy++;
+                if(mCurrentCopy >= mNbCopies)
+                    finishJob();
+                else
+                {
+                    mCurrentPage = 0;
+                    setProgress((float) (mCurrentPage + mPageCount*mCurrentCopy) / (float) (mPageCount*mNbCopies));
+                    mMsgHandler.obtainMessage(MSG_NEXT_PAGE).sendToTarget();
+                }
                 return;
             }
 
@@ -392,16 +410,8 @@ public class ZebraPrinter implements Handler.Callback
             Bitmap bitmap = Bitmap.createBitmap(iWidth << 3, iHeight, Bitmap.Config.ARGB_8888);
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
 
-            if (mLanguage.contains("zpl"))
+            if (isCPCLPrinter)
             {
-                //Create ZPL
-                if (DEBUG) Log.i(TAG, "Creating ZPL");
-                mPrintData.append("^XA");
-                mPrintData.append("^FO,0,0^GFA," + iSize + "," + iSize + "," + iWidth + ",");
-                mPrintData.append(ZebraPrintService.createBitmapZPL(bitmap));
-                mPrintData.append("^XZ\r\n\r\n");
-                bCheckPrinter = true;
-            }else {
                 //Create CPC
                 if (DEBUG) Log.i(TAG, "Creating CPC");
                 mPrintData.append("! 0 " + mDPI + " " + mDPI + " " + mLabelHeight + " 1\r\n");
@@ -409,6 +419,24 @@ public class ZebraPrinter implements Handler.Callback
                 mPrintData.append(ZebraPrintService.createBitmapCPC(bitmap));
                 mPrintData.append("\r\n");
                 mPrintData.append("PRINT\r\n");
+                if(DEBUG) Log.i(TAG, "CPCL Data: \n"+ mPrintData);
+            }else {
+                // By default create ZPL Data
+                //Create ZPL
+                if (DEBUG) Log.i(TAG, "Creating ZPL");
+                mPrintData.append("^XA");
+                mPrintData.append("^FO,0,0^GFA," + iSize + "," + iSize + "," + iWidth + ",");
+                mPrintData.append(ZebraPrintService.createBitmapZPL(bitmap));
+                if(mPageCount == 1 && mNbCopies > 1) {
+                    // Add ^PQ to jobs like printing the same label many times (single page documents)
+                    mPrintData.append("^PQ" + mNbCopies);
+                    // The ^PQ will print all the necessary labels for us, so we do not need to repeat
+                    // the job after this
+                    mCurrentCopy = mNbCopies - 1;
+                }
+                mPrintData.append("^XZ\r\n\r\n");
+                if(DEBUG) Log.i(TAG, "ZPL Data: \n"+ mPrintData);
+                bCheckPrinter = true;
             }
             bitmap.recycle();
 
@@ -422,7 +450,12 @@ public class ZebraPrinter implements Handler.Callback
 
             //Start Next Page
             mCurrentPage++;
-            setProgress((float) mCurrentPage / (float) mPageCount);
+            if(isCPCLPrinter == false && mPageCount == 1 && mNbCopies > 1) {
+                setProgress(1.0f);
+            }
+            else {
+                setProgress((float) (mCurrentPage + mPageCount * mCurrentCopy) / (float) (mPageCount * mNbCopies));
+            }
             mMsgHandler.obtainMessage(MSG_NEXT_PAGE).sendToTarget();
 
         }catch (Exception e)
@@ -444,16 +477,18 @@ public class ZebraPrinter implements Handler.Callback
         //Check Printer Status
         try {
             if (checkStatus() == false) return;
-
-            //Send to Printer
-            mConnection.writeData(mPdfToPrintAsByteArray, new PrinterConnection.WriteDataCallback() {
-                @Override
-                public void onWriteData(int iOffset, int iLength) {
-                    setProgress((float) iOffset / (float) iLength);
-                }
-            });
-
-
+            // If we need more than one copy, we send them one by one
+            final float dataLength = (float)mPdfToPrintAsByteArray.length;
+            final float totalLength = dataLength * (float)mNbCopies;
+            for(mCurrentCopy = 0; mCurrentCopy < mNbCopies; mCurrentCopy++) {
+                //Send to Printer
+                mConnection.writeData(mPdfToPrintAsByteArray, new PrinterConnection.WriteDataCallback() {
+                    @Override
+                    public void onWriteData(int iOffset, int iLength) {
+                        setProgress((float) (iOffset + dataLength*(float)mCurrentCopy) / totalLength);
+                    }
+                });
+            }
         } catch (IOException e) {
             e.printStackTrace();
             fail(R.string.interror);

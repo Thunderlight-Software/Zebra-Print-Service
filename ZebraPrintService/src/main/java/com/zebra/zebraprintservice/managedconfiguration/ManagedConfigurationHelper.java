@@ -157,7 +157,7 @@ public class ManagedConfigurationHelper {
             if(states.size() > 0)
             {
                 Log.d(TAG, "Sending state to feedback channel");
-                reporter.setStates(states, new KeyedAppStatesCallback() {
+                reporter.setStatesImmediate(states, new KeyedAppStatesCallback() {
                     @Override
                     public void onResult(int state, @Nullable Throwable throwable) {
                         Log.d(TAG, "reporter.setStates result: " + state);

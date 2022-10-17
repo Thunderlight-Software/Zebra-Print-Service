@@ -61,7 +61,7 @@ public class ZebraDiscoverySession extends PrinterDiscoverySession
             {
                 Intent i = new Intent(mService,PrinterInfoActivity.class);
                 i.putExtra("printer", Parcels.wrap(printer));
-                PendingIntent pi = PendingIntent.getActivity(mService,iReqCode,i,PendingIntent.FLAG_CANCEL_CURRENT);
+                PendingIntent pi = PendingIntent.getActivity(mService,iReqCode,i,PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                 if (DEBUG) Log.i(TAG,"Adding Printer:" + printerId.getLocalId());
                 PrinterInfo.Builder builder = new PrinterInfo.Builder(printerId, printer.mName,print.isAvailable() ? PrinterInfo.STATUS_IDLE : PrinterInfo.STATUS_UNAVAILABLE)
                         .setIconResourceId(R.drawable.ic_printer)
