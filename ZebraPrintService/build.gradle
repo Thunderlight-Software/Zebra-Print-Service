@@ -51,4 +51,5 @@ dependencies {
     implementation 'org.parceler:parceler-api:1.1.12'
     implementation 'androidx.enterprise:enterprise-feedback:+'
     annotationProcessor 'org.parceler:parceler:1.1.12'
+    implementation 'com.github.barteksc:pdfium-android:1.9.0'
 }

@@ -45,6 +45,7 @@ public class ZebraPrinter implements Handler.Callback
     private static final int MSG_GET_JOB                = 4;
     private static final int MSG_QUIT                   = 5;
     private static final int MSG_SEND_PDF_DATA          = 6;
+    private static final int MSG_PROCESS_PDF_DATA       = 7;
     private static final int MAX_STATUS_RESPONSE        = 500;
     private int mPrinterStatus = PrinterInfo.STATUS_IDLE;
     private final List<PrintJob> mJobs = new CopyOnWriteArrayList<>();
@@ -319,7 +320,6 @@ public class ZebraPrinter implements Handler.Callback
                         }
 
                         mPdfToPrintAsByteArray = buffer.toByteArray();
-
                         buffer.close();
                         in.close();
 
