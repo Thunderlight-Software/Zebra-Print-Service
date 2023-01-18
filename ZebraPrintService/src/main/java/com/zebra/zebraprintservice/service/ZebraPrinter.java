@@ -740,7 +740,7 @@ public class ZebraPrinter implements Handler.Callback
         Canvas canvas = new Canvas(temp);
         int top = 0;
         for (int i = 0; i < bitmap.size(); i++) {
-            Log.d("HTML", "Combine: "+i+"/"+bitmap.size()+1);
+            Log.d(TAG, "Combine: "+i+"/"+bitmap.size()+1);
 
             top = (i == 0 ? 0 : top+bitmap.get(i-1).getHeight());
             canvas.drawBitmap(bitmap.get(i), 0f, top, null);
