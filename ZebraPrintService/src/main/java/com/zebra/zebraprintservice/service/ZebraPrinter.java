@@ -85,6 +85,7 @@ public class ZebraPrinter implements Handler.Callback
     private String mLanguage = "";
     private boolean mIsPDFDirectPrinter = false;
     private byte[] mPdfToPrintAsByteArray = null;
+    //TODO: find a way to initi
 
     public interface ConnectionCallback
     {
@@ -279,40 +280,9 @@ public class ZebraPrinter implements Handler.Callback
 
     /**********************************************************************************************/
     //TODO: do this properly
-    private static boolean isPdfBoxInitialized = false;
     private boolean isVariableLengthWithContinuousModeEnabled()
     {
         // TODO: implement settings for this mode
-        // Set the printer to pdf mode and set to variable length
-        if(isPdfBoxInitialized == false)
-        {
-            try
-            {
-                Thread thread = new Thread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try  {
-                            //Your code goes here
-                            //byte bResponse[] = new byte[200];
-                            ////mConnection.writeData("! U1 setvar \"apl.settings\" \"varlen\"\r\n! U1 setvar \"apl.enable\" \"pdf\"\r\n\".getBytes());".getBytes());
-                            //mConnection.writeData("! U1 setvar \"apl.settings\" \"no-varlen\"\r\n! U1 setvar \"apl.enable\" \"none\"\r\n".getBytes());
-                            //ZebraPrinter.this.readInput(bResponse, MAX_STATUS_RESPONSE * 10, true);
-                            //Log.d(TAG, bResponse.toString());
-                            PDFBoxResourceLoader.init(ZebraPrinter.this.mService.getApplicationContext());
-                            isPdfBoxInitialized = true;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-
-                thread.start();
-
-            }catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
         return true;
     }
 

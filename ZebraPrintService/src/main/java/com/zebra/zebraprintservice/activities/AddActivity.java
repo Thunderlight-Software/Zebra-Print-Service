@@ -39,6 +39,7 @@ import com.zebra.zebraprintservice.NetworkDevice;
 import com.zebra.zebraprintservice.PrinterAdapter;
 import com.zebra.zebraprintservice.R;
 import com.zebra.zebraprintservice.database.PrinterDatabase;
+import com.zebra.zebraprintservice.service.ZebraPrintService;
 
 import org.parceler.Parcels;
 
@@ -215,14 +216,14 @@ public class AddActivity extends Activity
                 overridePendingTransition(0, 0);
                 return true;
             case R.id.restart_printservice:
-                 stopService(new Intent(this, PrintService.class));
+                 stopService(new Intent(this, ZebraPrintService.class));
                 Toast.makeText(this, "Restarting Print Service",Toast.LENGTH_SHORT).show();
                  Handler serviceRestartHandler = new Handler ();
                  serviceRestartHandler.postDelayed (new Runnable () {
                     @Override
                     public void run() {
 
-                        startService (new Intent (AddActivity.this, PrintService.class));
+                        startService (new Intent (AddActivity.this, ZebraPrintService.class));
                         Toast.makeText(AddActivity.this, "Starting Print Service",Toast.LENGTH_SHORT).show();
                     }
                 }, 2000);
