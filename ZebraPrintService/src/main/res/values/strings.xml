@@ -22,6 +22,7 @@
     <string name="add_printer">Add Printer</string>
     <string name="service_version">Service Version</string>
     <string name="remove_all_printers">Remove all printers</string>
+    <string name="restart_printservice">Restart To Force re-Discovery</string>
     <string name="bluetooth">Bluetooth Printer</string>
     <string name="network">Network Printer</string>
     <string name="usb">USB Connected Printer</string>

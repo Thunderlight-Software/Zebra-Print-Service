@@ -2,6 +2,10 @@ package com.zebra.zebraprintservice.service;
 
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.pdf.PdfDocument;
 import android.graphics.pdf.PdfRenderer;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -16,21 +20,31 @@ import android.print.PrinterInfo;
 import android.printservice.PrintDocument;
 import android.printservice.PrintJob;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.pdmodel.PDPage;
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream;
+import com.tom_roush.pdfbox.pdmodel.common.PDRectangle;
+import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory;
+import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import com.zebra.zebraprintservice.BuildConfig;
 import com.zebra.zebraprintservice.R;
 import com.zebra.zebraprintservice.connection.PrinterConnection;
 import com.zebra.zebraprintservice.database.PrinterDatabase;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -45,7 +59,6 @@ public class ZebraPrinter implements Handler.Callback
     private static final int MSG_GET_JOB                = 4;
     private static final int MSG_QUIT                   = 5;
     private static final int MSG_SEND_PDF_DATA          = 6;
-    private static final int MSG_PROCESS_PDF_DATA       = 7;
     private static final int MAX_STATUS_RESPONSE        = 500;
     private int mPrinterStatus = PrinterInfo.STATUS_IDLE;
     private final List<PrintJob> mJobs = new CopyOnWriteArrayList<>();
@@ -57,6 +70,7 @@ public class ZebraPrinter implements Handler.Callback
     private ZebraPrintService mService;
     private PrinterConnection mConnection;
     private PrinterId mPrinterId = null;
+    private PrintDocument mDocument = null;
     private PdfRenderer renderer = null;
     private StringBuilder mPrintData = new StringBuilder();
     private File mTempFile;
@@ -250,6 +264,8 @@ public class ZebraPrinter implements Handler.Callback
         return false;
     }
 
+
+
     /**********************************************************************************************/
     private void checkFlushed()
     {
@@ -260,6 +276,48 @@ public class ZebraPrinter implements Handler.Callback
             readInput(bResponse, MAX_STATUS_RESPONSE * 10, true);
         }catch (Exception e) {}
     }
+
+    /**********************************************************************************************/
+    //TODO: do this properly
+    private static boolean isPdfBoxInitialized = false;
+    private boolean isVariableLengthWithContinuousModeEnabled()
+    {
+        // TODO: implement settings for this mode
+        // Set the printer to pdf mode and set to variable length
+        if(isPdfBoxInitialized == false)
+        {
+            try
+            {
+                Thread thread = new Thread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try  {
+                            //Your code goes here
+                            //byte bResponse[] = new byte[200];
+                            ////mConnection.writeData("! U1 setvar \"apl.settings\" \"varlen\"\r\n! U1 setvar \"apl.enable\" \"pdf\"\r\n\".getBytes());".getBytes());
+                            //mConnection.writeData("! U1 setvar \"apl.settings\" \"no-varlen\"\r\n! U1 setvar \"apl.enable\" \"none\"\r\n".getBytes());
+                            //ZebraPrinter.this.readInput(bResponse, MAX_STATUS_RESPONSE * 10, true);
+                            //Log.d(TAG, bResponse.toString());
+                            PDFBoxResourceLoader.init(ZebraPrinter.this.mService.getApplicationContext());
+                            isPdfBoxInitialized = true;
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+                thread.start();
+
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return true;
+    }
+
+    /**********************************************************************************************/
+
 
     /**********************************************************************************************/
     private void MsgStartJob()
@@ -276,6 +334,7 @@ public class ZebraPrinter implements Handler.Callback
             @Override
             public void onConnected()
             {
+
                 mMsgHandler.obtainMessage(MSG_GET_JOB).sendToTarget();
             }
 
@@ -296,33 +355,42 @@ public class ZebraPrinter implements Handler.Callback
             public void run()
             {
                 mCurrent.start();
-                PrintDocument doc = mCurrent.getDocument();
+                mDocument = mCurrent.getDocument();
                 PrintJobInfo jobInfo = mCurrent.getInfo();
                 if(jobInfo != null)
                     mNbCopies = jobInfo.getCopies();
                 else
                     mNbCopies = 1;
                 mCurrentCopy = 0;
+
+                // Extract the document that has to be printed as a file
+                mTempFile = createTempFileFromPrintJobDocument();
+                if(isVariableLengthWithContinuousModeEnabled())
+                {
+                    // Replace the temporary file with one that has been flattened
+                    mTempFile = FlattenDocumentIntoOnePage(mTempFile);
+                }
+
                 if(mIsPDFDirectPrinter)
                 {
                     try
                     {
-                        //Extract byte data from the document
-                        ParcelFileDescriptor inParcel = doc.getData();
-
-                        InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
-                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                        int nRead;
-                        byte[] data = new byte[16384];
-
-                        while ((nRead = in.read(data, 0, data.length)) != -1) {
-                            buffer.write(data, 0, nRead);
-                        }
-
-                        mPdfToPrintAsByteArray = buffer.toByteArray();
-                        buffer.close();
-                        in.close();
-
+                        ////Extract byte data from the document
+                        //ParcelFileDescriptor inParcel = mDocument.getData();
+                        //
+                        //InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
+                        //ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                        //int nRead;
+                        //byte[] data = new byte[16384];
+                        //
+                        //while ((nRead = in.read(data, 0, data.length)) != -1) {
+                        //    buffer.write(data, 0, nRead);
+                        //}
+                        //
+                        //mPdfToPrintAsByteArray = buffer.toByteArray();
+                        //buffer.close();
+                        //in.close();
+                        mPdfToPrintAsByteArray = readFileAsByteArray(mTempFile);
                         mMsgHandler.obtainMessage(MSG_SEND_PDF_DATA).sendToTarget();
 
                     }catch (Exception e)
@@ -337,19 +405,6 @@ public class ZebraPrinter implements Handler.Callback
                 {
                     try
                     {
-                        //Create a file copy of the document
-                        ParcelFileDescriptor inParcel = doc.getData();
-                        mTempFile = File.createTempFile(doc.getInfo().getName().replaceAll("[\\\\/:*?\"<>|]", ""), null, mService.getCacheDir());
-                        mTempFile.deleteOnExit();
-
-                        InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
-                        OutputStream out = new FileOutputStream(mTempFile);
-                        byte[] buf = new byte[8192];
-                        int r;
-                        while ((r = in.read(buf)) > -1) out.write(buf, 0, r);
-                        out.close();
-                        in.close();
-
                         renderer = new PdfRenderer(ParcelFileDescriptor.open(mTempFile,ParcelFileDescriptor.MODE_READ_ONLY));
                         mPageCount = renderer.getPageCount();
                         mCurrentPage = 0;
@@ -399,16 +454,33 @@ public class ZebraPrinter implements Handler.Callback
             PdfRenderer.Page page = renderer.openPage(mCurrentPage);
             mPrintData.setLength(0);
 
-            //Calculate Bitmap Size
-            int iWidth = mDPI * page.getWidth() / 72;
-            int iHeight = mDPI * page.getHeight() / 72;
-            iWidth = (iWidth + 7) / 8;
-            int iSize = iWidth * iHeight;
+            int iWidth;
+            int iHeight;
+            int iSize;
+            Bitmap bitmap;
+            if(isVariableLengthWithContinuousModeEnabled())
+            {
+                iWidth = page.getWidth();
+                iHeight = page.getHeight();
+                iSize = iWidth * iHeight;
+                bitmap = Bitmap.createBitmap(iWidth, iHeight, Bitmap.Config.ARGB_8888);
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
+                iWidth = (iWidth >> 3);
+            }
+            else
+            {
+                //Calculate Bitmap Size
+                iWidth = mDPI * page.getWidth() / 72;
+                iHeight = mDPI * page.getHeight() / 72;
+                iWidth = (iWidth + 7) / 8;
+                iSize = iWidth * iHeight;
 
-            //Render the Bitmap
-            if (DEBUG) Log.i(TAG,"Rendering Size :" + iWidth + "," + iHeight);
-            Bitmap bitmap = Bitmap.createBitmap(iWidth << 3, iHeight, Bitmap.Config.ARGB_8888);
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
+                //Render the Bitmap
+                if (DEBUG) Log.i(TAG,"Rendering Size :" + iWidth + "," + iHeight);
+                bitmap = Bitmap.createBitmap(iWidth << 3, iHeight, Bitmap.Config.ARGB_8888);
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
+            }
+
 
             if (isCPCLPrinter)
             {
@@ -423,10 +495,18 @@ public class ZebraPrinter implements Handler.Callback
             }else {
                 // By default create ZPL Data
                 //Create ZPL
+                String ZPLBitmap = ZebraPrintService.createBitmapZPL(bitmap);
                 if (DEBUG) Log.i(TAG, "Creating ZPL");
                 mPrintData.append("^XA");
+                if(isVariableLengthWithContinuousModeEnabled())
+                {
+                    mPrintData.append("^MNN");
+                }
+                mPrintData.append("^LL"+ (iHeight + 60));
+                mPrintData.append("^PW"+(iWidth*8));
+                mPrintData.append("^LH0,60");
                 mPrintData.append("^FO,0,0^GFA," + iSize + "," + iSize + "," + iWidth + ",");
-                mPrintData.append(ZebraPrintService.createBitmapZPL(bitmap));
+                mPrintData.append(ZPLBitmap);
                 if(mPageCount == 1 && mNbCopies > 1) {
                     // Add ^PQ to jobs like printing the same label many times (single page documents)
                     mPrintData.append("^PQ" + mNbCopies);
@@ -446,7 +526,9 @@ public class ZebraPrinter implements Handler.Callback
             if (bCheckPrinter && checkStatus() == false) return;
 
             //Send to Printer
+            Toast.makeText(mService.getApplicationContext(), "Sensing page: " + mCurrentPage + " to printer.", Toast.LENGTH_SHORT).show();
             mConnection.writeData(mPrintData.toString().getBytes());
+            Toast.makeText(mService.getApplicationContext(), "Page: " + mCurrentPage + " sent to printer.", Toast.LENGTH_SHORT).show();
 
             //Start Next Page
             mCurrentPage++;
@@ -463,6 +545,267 @@ public class ZebraPrinter implements Handler.Callback
             if(DEBUG) e.printStackTrace();
             fail(R.string.interror);
         }
+    }
+
+    private byte[] readFileAsByteArray(File file)
+    {
+        int size = (int) file.length();
+        byte[] bytes = new byte[size];
+        try {
+            BufferedInputStream buf = new BufferedInputStream(new FileInputStream(file));
+            buf.read(bytes, 0, bytes.length);
+            buf.close();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        }
+        return bytes;
+    }
+
+    private File createTempFileFromPrintJobDocument()
+    {
+        File fileToReturn = null;
+        try {
+            //Create a file copy of the document
+            ParcelFileDescriptor inParcel = mDocument.getData();
+            fileToReturn = File.createTempFile(mDocument.getInfo().getName().replaceAll("[\\\\/:*?\"<>|]", ""), null, mService.getCacheDir());
+            fileToReturn.deleteOnExit();
+            InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(inParcel);
+            OutputStream out = new FileOutputStream(fileToReturn);
+            byte[] buf = new byte[8192];
+            int r;
+            while ((r = in.read(buf)) > -1) out.write(buf, 0, r);
+            out.close();
+            in.close();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        return fileToReturn;
+    }
+
+    private File FlattenDocumentIntoOnePage(File originalTempFile)
+    {
+        try {
+
+            // Extract all the pages as bitmap files
+            PdfRenderer renderer = new PdfRenderer(ParcelFileDescriptor.open(originalTempFile,ParcelFileDescriptor.MODE_READ_ONLY));
+            int pageCount = renderer.getPageCount();
+            if(pageCount == 1)
+            {
+                return originalTempFile;
+            }
+            File newFile = File.createTempFile(originalTempFile.getName() + ".flat.pdf", null, mService.getCacheDir());
+            newFile.deleteOnExit();
+            PdfRenderer.Page page = null;
+            ArrayList<Bitmap> trimmedPages = new ArrayList<>(renderer.getPageCount());
+            for(int currentPage = 0; currentPage < renderer.getPageCount(); currentPage++)
+            {
+                // Let's get pages one by one
+                page = renderer.openPage(currentPage);
+
+                //We keep the original document sizes
+                //int iWidth = page.getWidth();
+                //int iHeight = page.getHeight();
+
+                //Calculate Bitmap Size according to printer data
+                int iWidth = mDPI * page.getWidth() / 72;
+                int iHeight = mDPI * page.getHeight() / 72;
+                iWidth = ((iWidth + 7) / 8)<<3;
+
+                //Render the Bitmap
+                if (DEBUG) Log.i(TAG,"Rendering Size :" + iWidth + "," + iHeight);
+                Bitmap bitmap = Bitmap.createBitmap(iWidth, iHeight, Bitmap.Config.ARGB_8888);
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
+
+                // Now let's trim the bitmap image
+                Bitmap trimmed = imageWithMargin(bitmap, 0, 1, false);
+                bitmap.recycle();
+
+                // let's convert it to black and white
+                //Bitmap bwImage = convertToBlackAndWhite(trimmed);
+                //trimmed.recycle();
+
+                // Add the trimmed page to the list
+                trimmedPages.add(trimmed);
+
+                page.close();
+            }
+
+            // Combine all the bitmaps into one
+            Bitmap combined = combineImageIntoOne(trimmedPages);
+            for(Bitmap toRecycle : trimmedPages)
+            {
+                toRecycle.recycle();
+            }
+
+            //boolean succeeded = createPDFFileFromBitmap(combined, newFile);
+            boolean succeeded = createPDFFileFromBitmapPDFBox(combined, newFile);
+            combined.recycle();
+            return succeeded ? newFile : null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private boolean createPDFFileFromBitmap(Bitmap bitmapImage, File targetFile)
+    {
+        PdfDocument document = new PdfDocument();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(bitmapImage.getWidth(), bitmapImage.getHeight(), 1).create();
+        PdfDocument.Page page = document.startPage(pageInfo);
+
+        Canvas canvas = page.getCanvas();
+
+        Paint paint = new Paint();
+        paint.setColor(Color.parseColor("#ffffff"));
+        canvas.drawPaint(paint);
+
+        canvas.drawBitmap(bitmapImage, 0, 0 , null);
+        document.finishPage(page);
+
+
+        // write the document content
+        try {
+            document.writeTo(new FileOutputStream(targetFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(mService.getApplicationContext(), "Something wrong: " + e.toString(), Toast.LENGTH_LONG).show();
+        }
+
+        // close the document
+        document.close();
+        return targetFile.exists();
+    }
+
+    private boolean createPDFFileFromBitmapPDFBox(Bitmap bitmap, File targetFile) {
+        try {
+            PDDocument document = new PDDocument();
+            PDPage page = new PDPage(new PDRectangle(bitmap.getWidth(), bitmap.getHeight()));
+            document.addPage(page);
+
+            // Define a content stream for adding to the PDF
+
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+            // Here you have great control of the compression rate and DPI on your image.
+            // Update 2017/11/22: The DPI param actually is useless as of current version v1.8.9.1 if you take a look into the source code. Compression rate is enough to achieve a much smaller file size.
+            PDImageXObject ximage = JPEGFactory.createFromImage(document, bitmap, 0.70f);
+
+            // You may want to call PDPage.getCropBox() in order to place your image
+            // somewhere inside this page rect with (x, y) and (width, height).
+            contentStream.drawImage(ximage, 0, 0);
+
+            // Make sure that the content stream is closed:
+            contentStream.close();
+
+            document.save(targetFile);
+            document.close();
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+        private Bitmap convertToBlackAndWhite(Bitmap bitmap)
+    {
+        Bitmap bwBitmap = Bitmap.createBitmap( bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.RGB_565 );
+        float[] hsv = new float[ 3 ];
+        for( int col = 0; col < bitmap.getWidth(); col++ ) {
+            for( int row = 0; row < bitmap.getHeight(); row++ ) {
+                Color.colorToHSV( bitmap.getPixel( col, row ), hsv );
+                if( hsv[ 2 ] > 0.5f ) {
+                    bwBitmap.setPixel( col, row, 0xffffffff );
+                } else {
+                    bwBitmap.setPixel( col, row, 0xff000000 );
+                }
+            }
+        }
+        return bwBitmap;
+    }
+
+    private Bitmap combineImageIntoOne(ArrayList<Bitmap> bitmap) {
+        int w = 0, h = 0;
+        for (int i = 0; i < bitmap.size(); i++) {
+            if (i < bitmap.size() - 1) {
+                w = bitmap.get(i).getWidth() > bitmap.get(i + 1).getWidth() ? bitmap.get(i).getWidth() : bitmap.get(i + 1).getWidth();
+            }
+            h += bitmap.get(i).getHeight();
+        }
+
+        Bitmap temp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(temp);
+        int top = 0;
+        for (int i = 0; i < bitmap.size(); i++) {
+            Log.d("HTML", "Combine: "+i+"/"+bitmap.size()+1);
+
+            top = (i == 0 ? 0 : top+bitmap.get(i-1).getHeight());
+            canvas.drawBitmap(bitmap.get(i), 0f, top, null);
+        }
+        return temp;
+    }
+
+    public static Bitmap imageWithMargin(Bitmap bitmap, int color, int maxMargin, boolean removeLeftRightMargin) {
+        int maxTop = 0, maxBottom = 0, maxLeft = bitmap.getWidth(), maxRight = 0;
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int[] bitmapArray = new int[width * height];
+        bitmap.getPixels(bitmapArray, 0, width, 0, 0, width, height);
+
+        // Find first non-color pixel from top of bitmap
+        searchTopMargin:
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (bitmapArray[width * y + x] != color) {
+                    maxTop = (y > maxMargin ? y - maxMargin : 0);
+                    break searchTopMargin;
+                }
+            }
+        }
+
+        // Find first non-color pixel from bottom of bitmap
+        searchBottomMargin:
+        for (int y = height - 1; y >= 0; y--) {
+            for (int x = width - 1; x >= 0; x--) {
+                if (bitmapArray[width * y + x] != color) {
+                    maxBottom = y < height - maxMargin ? y + maxMargin : height;
+                    break searchBottomMargin;
+                }
+            }
+        }
+
+        if(removeLeftRightMargin) {
+            // We scan all the image from top to bottom to get the minimal margin for left
+            searchLeftMargin:
+            for (int x = 0; x < width; x++) {
+                for (int y = (maxTop + maxMargin); y < (maxBottom - maxMargin); y++) {
+                    if (bitmapArray[width * y + x] != color) {
+                        int foundMaxLeft = (x > maxMargin ? x - maxMargin : 0);
+                        maxLeft = (foundMaxLeft < maxLeft) ? foundMaxLeft : maxLeft;
+                    }
+                }
+            }
+
+            // We scan all the image from top to bottom to get the maximal margin for right
+            searchRightMargin:
+            for (int x = width - 1; x >= 0; x--) {
+                for (int y = (maxTop + maxMargin); y < (maxBottom - maxMargin); y++) {
+                    if (bitmapArray[width * y + x] != color) {
+                        int foundMaxRight = x < width - maxMargin ? x + maxMargin : width;
+                        maxRight = foundMaxRight > maxRight ? foundMaxRight : maxRight;
+                    }
+                }
+            }
+        }
+        else
+        {
+            maxLeft = 0;
+            maxRight = bitmap.getWidth();
+        }
+
+        return Bitmap.createBitmap(bitmap, maxLeft, maxTop, maxRight - maxLeft, maxBottom - maxTop);
     }
 
     /**********************************************************************************************/
