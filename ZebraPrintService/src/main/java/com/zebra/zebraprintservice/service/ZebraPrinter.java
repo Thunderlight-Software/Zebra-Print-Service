@@ -624,10 +624,6 @@ public class ZebraPrinter implements Handler.Callback
                 Bitmap trimmed = imageWithMargin(bitmap, 0, 1, false);
                 bitmap.recycle();
 
-                // let's convert it to black and white
-                //Bitmap bwImage = convertToBlackAndWhite(trimmed);
-                //trimmed.recycle();
-
                 // Add the trimmed page to the list
                 trimmedPages.add(trimmed);
 
@@ -641,8 +637,13 @@ public class ZebraPrinter implements Handler.Callback
                 toRecycle.recycle();
             }
 
+            //Old method that generates too many problems
             //boolean succeeded = createPDFFileFromBitmap(combined, newFile);
-            boolean succeeded = createPDFFileFromBitmapPDFBox(combined, newFile);
+            // TODO: Tests should be done with JPEG Quality to reduce the file size and make it
+            // usable on a PDFDirect printer.
+            // This settings should be available when using a PDFDirect printer in variable length mode (printQuality from 0.5f to 1.0f)
+            // Explaining that it has impact on the size of the data transfered to the printer
+            boolean succeeded = createPDFFileFromBitmapPDFBox(combined, newFile, 0.70f);
             combined.recycle();
             return succeeded ? newFile : null;
         } catch (IOException e) {
@@ -680,7 +681,7 @@ public class ZebraPrinter implements Handler.Callback
         return targetFile.exists();
     }
 
-    private boolean createPDFFileFromBitmapPDFBox(Bitmap bitmap, File targetFile) {
+    private boolean createPDFFileFromBitmapPDFBox(Bitmap bitmap, File targetFile, float jpegQuality) {
         try {
             PDDocument document = new PDDocument();
             PDPage page = new PDPage(new PDRectangle(bitmap.getWidth(), bitmap.getHeight()));
@@ -708,23 +709,6 @@ public class ZebraPrinter implements Handler.Callback
             e.printStackTrace();
         }
         return false;
-    }
-
-        private Bitmap convertToBlackAndWhite(Bitmap bitmap)
-    {
-        Bitmap bwBitmap = Bitmap.createBitmap( bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.RGB_565 );
-        float[] hsv = new float[ 3 ];
-        for( int col = 0; col < bitmap.getWidth(); col++ ) {
-            for( int row = 0; row < bitmap.getHeight(); row++ ) {
-                Color.colorToHSV( bitmap.getPixel( col, row ), hsv );
-                if( hsv[ 2 ] > 0.5f ) {
-                    bwBitmap.setPixel( col, row, 0xffffffff );
-                } else {
-                    bwBitmap.setPixel( col, row, 0xff000000 );
-                }
-            }
-        }
-        return bwBitmap;
     }
 
     private Bitmap combineImageIntoOne(ArrayList<Bitmap> bitmap) {
