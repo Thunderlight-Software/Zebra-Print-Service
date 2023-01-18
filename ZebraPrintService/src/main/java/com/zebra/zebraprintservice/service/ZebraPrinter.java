@@ -501,10 +501,11 @@ public class ZebraPrinter implements Handler.Callback
                 if(isVariableLengthWithContinuousModeEnabled())
                 {
                     mPrintData.append("^MNN");
+                    // TODO: Do something with this hardcoded margin of hell
+                    mPrintData.append("^LL"+ (iHeight + 60));
+                    mPrintData.append("^LH0,60");
                 }
-                mPrintData.append("^LL"+ (iHeight + 60));
                 mPrintData.append("^PW"+(iWidth*8));
-                mPrintData.append("^LH0,60");
                 mPrintData.append("^FO,0,0^GFA," + iSize + "," + iSize + "," + iWidth + ",");
                 mPrintData.append(ZPLBitmap);
                 if(mPageCount == 1 && mNbCopies > 1) {
