@@ -41,7 +41,9 @@
     <string name="print">Print</string>
     <string name="unreadable_input">Input unreadable</string>
     <string name="width">Width:</string>
+    <string name="jpgquality">Jpg Quality:</string>
     <string name="height">Height:</string>
+    <string name="topmargin">Top Margin:</string>
     <string name="media_size">Media size in Inches:</string>
     <string name="submit">Submit</string>
     <string name="printer_name">Printer name:</string>

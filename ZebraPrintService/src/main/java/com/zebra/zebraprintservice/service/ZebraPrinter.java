@@ -82,6 +82,9 @@ public class ZebraPrinter implements Handler.Callback
     private int mDPI = 0;
     private int mLabelWidth = 0;
     private int mLabelHeight = 0;
+    private int mVLTopMargin = 0;
+    private int mVariableLengthEnabled = 0;
+    private int mJpegQuality = 75;
     private String mLanguage = "";
     private boolean mIsPDFDirectPrinter = false;
     private byte[] mPdfToPrintAsByteArray = null;
@@ -105,6 +108,9 @@ public class ZebraPrinter implements Handler.Callback
         mDPI = printer.mDPI;
         mLabelHeight = printer.mHeight;
         mLabelWidth = printer.mWidth;
+        mVariableLengthEnabled = printer.mVariableLengthEnabled;
+        mVLTopMargin = printer.mVariableLengthTopMargin;
+        mJpegQuality = printer.mJpegQuality;
         mHandler = new Handler(mService.getMainLooper());
         mMsgThread = new HandlerThread("PrinterMsgHandler");
         mMsgThread.start();
@@ -279,14 +285,6 @@ public class ZebraPrinter implements Handler.Callback
     }
 
     /**********************************************************************************************/
-    //TODO: do this properly
-    private boolean isVariableLengthWithContinuousModeEnabled()
-    {
-        // TODO: implement settings for this mode
-        return true;
-    }
-
-    /**********************************************************************************************/
 
 
     /**********************************************************************************************/
@@ -335,7 +333,7 @@ public class ZebraPrinter implements Handler.Callback
 
                 // Extract the document that has to be printed as a file
                 mTempFile = createTempFileFromPrintJobDocument();
-                if(isVariableLengthWithContinuousModeEnabled())
+                if(mVariableLengthEnabled == 1)
                 {
                     // Replace the temporary file with one that has been flattened
                     mTempFile = FlattenDocumentIntoOnePage(mTempFile);
@@ -428,7 +426,7 @@ public class ZebraPrinter implements Handler.Callback
             int iHeight;
             int iSize;
             Bitmap bitmap;
-            if(isVariableLengthWithContinuousModeEnabled())
+            if(mVariableLengthEnabled == 1)
             {
                 iWidth = page.getWidth();
                 iHeight = page.getHeight();
@@ -468,12 +466,11 @@ public class ZebraPrinter implements Handler.Callback
                 String ZPLBitmap = ZebraPrintService.createBitmapZPL(bitmap);
                 if (DEBUG) Log.i(TAG, "Creating ZPL");
                 mPrintData.append("^XA");
-                if(isVariableLengthWithContinuousModeEnabled())
+                if(mVariableLengthEnabled == 1)
                 {
                     mPrintData.append("^MNN");
-                    // TODO: Do something with this hardcoded margin of hell
-                    mPrintData.append("^LL"+ (iHeight + 60));
-                    mPrintData.append("^LH0,60");
+                    mPrintData.append("^LL"+ (iHeight + mVLTopMargin));
+                    mPrintData.append("^LH0," + mVLTopMargin);
                 }
                 mPrintData.append("^PW"+(iWidth*8));
                 mPrintData.append("^FO,0,0^GFA," + iSize + "," + iSize + "," + iWidth + ",");
@@ -563,10 +560,7 @@ public class ZebraPrinter implements Handler.Callback
             // Extract all the pages as bitmap files
             PdfRenderer renderer = new PdfRenderer(ParcelFileDescriptor.open(originalTempFile,ParcelFileDescriptor.MODE_READ_ONLY));
             int pageCount = renderer.getPageCount();
-            if(pageCount == 1)
-            {
-                return originalTempFile;
-            }
+
             File newFile = File.createTempFile(originalTempFile.getName() + ".flat.pdf", null, mService.getCacheDir());
             newFile.deleteOnExit();
             PdfRenderer.Page page = null;
@@ -600,11 +594,17 @@ public class ZebraPrinter implements Handler.Callback
                 page.close();
             }
 
-            // Combine all the bitmaps into one
-            Bitmap combined = combineImageIntoOne(trimmedPages);
-            for(Bitmap toRecycle : trimmedPages)
+            Bitmap toPrint = null;
+            if(renderer.getPageCount() > 1) {
+                // Combine all the bitmaps into one
+                toPrint = combineImageIntoOne(trimmedPages);
+                for (Bitmap toRecycle : trimmedPages) {
+                    toRecycle.recycle();
+                }
+            }
+            else
             {
-                toRecycle.recycle();
+                toPrint = trimmedPages.get(0);
             }
 
             //Old method that generates too many problems
@@ -613,8 +613,8 @@ public class ZebraPrinter implements Handler.Callback
             // usable on a PDFDirect printer.
             // This settings should be available when using a PDFDirect printer in variable length mode (printQuality from 0.5f to 1.0f)
             // Explaining that it has impact on the size of the data transfered to the printer
-            boolean succeeded = createPDFFileFromBitmapPDFBox(combined, newFile, 0.70f);
-            combined.recycle();
+            boolean succeeded = createPDFFileFromBitmapPDFBox(toPrint, newFile, mJpegQuality/100.0f);
+            toPrint.recycle();
             return succeeded ? newFile : null;
         } catch (IOException e) {
             e.printStackTrace();
@@ -682,7 +682,11 @@ public class ZebraPrinter implements Handler.Callback
     }
 
     private Bitmap combineImageIntoOne(ArrayList<Bitmap> bitmap) {
+        if(bitmap.size() == 1)
+            return bitmap.get(0);
+
         int w = 0, h = 0;
+
         for (int i = 0; i < bitmap.size(); i++) {
             if (i < bitmap.size() - 1) {
                 w = bitmap.get(i).getWidth() > bitmap.get(i + 1).getWidth() ? bitmap.get(i).getWidth() : bitmap.get(i + 1).getWidth();

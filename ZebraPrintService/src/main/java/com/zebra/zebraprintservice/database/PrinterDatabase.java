@@ -1,5 +1,6 @@
 package com.zebra.zebraprintservice.database;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -22,21 +23,24 @@ import java.util.Date;
 
 public class PrinterDatabase
 {
-    private static final String DB_NAME             = "Printers.db";
-    private static final int DB_VERSION             = 5;
-    private static final String DB_TABLE            = "Printers";
-    private static final String KEY_PRINTERID       = "PrinterId";
-    private static final String KEY_NAME            = "Name";
-    private static final String KEY_PRINTER         = "Printer";
-    private static final String KEY_DESCRIPTION     = "Description";
-    private static final String KEY_TYPE            = "Type";
-    private static final String KEY_ADDRESS         = "Address";
-    private static final String KEY_DPI             = "DPI";
-    private static final String KEY_WIDTH           = "Width";
-    private static final String KEY_HEIGHT          = "Height";
-    private static final String KEY_PORT            = "Port";
-    private static final String KEY_MODIFIED        = "Modified";
-    private static final String KEY_LANGUAGE        = "Language";
+    private static final String DB_NAME                 = "Printers.db";
+    private static final int DB_VERSION                 = 6;
+    private static final String DB_TABLE                = "Printers";
+    private static final String KEY_PRINTERID           = "PrinterId";
+    private static final String KEY_NAME                = "Name";
+    private static final String KEY_PRINTER             = "Printer";
+    private static final String KEY_DESCRIPTION         = "Description";
+    private static final String KEY_TYPE                = "Type";
+    private static final String KEY_ADDRESS             = "Address";
+    private static final String KEY_DPI                 = "DPI";
+    private static final String KEY_WIDTH               = "Width";
+    private static final String KEY_HEIGHT              = "Height";
+    private static final String KEY_VARIABLE_LENGTH     = "Variable";
+    private static final String KEY_TOPMARGIN           = "TopMargin";
+    private static final String KEY_JPGQUALITY          = "Jpgquality";
+    private static final String KEY_PORT                = "Port";
+    private static final String KEY_MODIFIED            = "Modified";
+    private static final String KEY_LANGUAGE            = "Language";
 
     private DatabaseHelper mDbHelper = null;
     private Context mCtx = null;
@@ -56,6 +60,9 @@ public class PrinterDatabase
         public int mDPI = 0;
         public int mWidth = 0;
         public int mHeight = 0;
+        public int mVariableLengthEnabled = 0;
+        public int mVariableLengthTopMargin = 60;
+        public int mJpegQuality = 75;
         public Date mTimeStamp = new Date();
     }
 
@@ -73,6 +80,7 @@ public class PrinterDatabase
     }
 
     /**********************************************************************************************/
+    @SuppressLint("Range")
     private Printer getRecord(Cursor c)
     {
         if (c == null) return null;
@@ -87,6 +95,9 @@ public class PrinterDatabase
         mItem.mDPI = c.getInt(c.getColumnIndex(KEY_DPI));
         mItem.mWidth = c.getInt(c.getColumnIndex(KEY_WIDTH));
         mItem.mHeight = c.getInt(c.getColumnIndex(KEY_HEIGHT));
+        mItem.mVariableLengthEnabled = c.getInt(c.getColumnIndex(KEY_VARIABLE_LENGTH));
+        mItem.mVariableLengthTopMargin = c.getInt(c.getColumnIndex(KEY_TOPMARGIN));
+        mItem.mJpegQuality = c.getInt(c.getColumnIndex(KEY_JPGQUALITY));
         mItem.mTimeStamp = new Date(c.getLong(c.getColumnIndex(KEY_MODIFIED)));
         mItem.mLanguage = c.getString(c.getColumnIndex(KEY_LANGUAGE));
         return mItem;
@@ -106,6 +117,9 @@ public class PrinterDatabase
         Values.put(KEY_DPI, item.mDPI);
         Values.put(KEY_WIDTH, item.mWidth);
         Values.put(KEY_HEIGHT, item.mHeight);
+        Values.put(KEY_VARIABLE_LENGTH, item.mVariableLengthEnabled);
+        Values.put(KEY_TOPMARGIN, item.mVariableLengthTopMargin);
+        Values.put(KEY_JPGQUALITY, item.mJpegQuality);
         Values.put(KEY_MODIFIED,item.mTimeStamp.getTime());
         Values.put(KEY_LANGUAGE,item.mLanguage);
         return Values;
@@ -292,6 +306,9 @@ public class PrinterDatabase
                     KEY_DPI + " INT, " +
                     KEY_WIDTH + " INT, " +
                     KEY_HEIGHT + " INT, " +
+                    KEY_VARIABLE_LENGTH + " INT, " +
+                    KEY_TOPMARGIN + " INT, " +
+                    KEY_JPGQUALITY + " INT, " +
                     KEY_MODIFIED + " DATETIME DEFAULT CURRENT_TIMESTAMP" +
                     " )");
         }
