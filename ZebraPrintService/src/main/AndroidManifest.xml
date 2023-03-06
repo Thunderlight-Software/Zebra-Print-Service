@@ -78,7 +78,9 @@
             android:name=".activities.SettingsActivity"
             android:autoRemoveFromRecents="true"
             android:exported="true"
-            android:label="@string/settings_title" /> <!-- Printer Service -->
+            android:label="@string/settings_title" />
+
+        <!-- Printer Service -->
         <service
             android:name=".service.ZebraPrintService"
             android:enabled="true"

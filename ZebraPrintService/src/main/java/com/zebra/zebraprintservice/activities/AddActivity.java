@@ -20,11 +20,16 @@ import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.printservice.PrintService;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -34,6 +39,7 @@ import com.zebra.zebraprintservice.NetworkDevice;
 import com.zebra.zebraprintservice.PrinterAdapter;
 import com.zebra.zebraprintservice.R;
 import com.zebra.zebraprintservice.database.PrinterDatabase;
+import com.zebra.zebraprintservice.service.ZebraPrintService;
 
 import org.parceler.Parcels;
 
@@ -193,6 +199,14 @@ public class AddActivity extends Activity
 
     /***********************************************************************************************/
     @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.add_activity_menu, menu);
+        return true;
+    }
+    /***********************************************************************************************/
+    @Override
     public boolean onMenuItemSelected(int featureId, @NonNull MenuItem item)
     {
         switch (item.getItemId())
@@ -201,6 +215,19 @@ public class AddActivity extends Activity
                 finish();
                 overridePendingTransition(0, 0);
                 return true;
+            case R.id.restart_printservice:
+                 stopService(new Intent(this, ZebraPrintService.class));
+                Toast.makeText(this, "Restarting Print Service",Toast.LENGTH_SHORT).show();
+                 Handler serviceRestartHandler = new Handler ();
+                 serviceRestartHandler.postDelayed (new Runnable () {
+                    @Override
+                    public void run() {
+
+                        startService (new Intent (AddActivity.this, ZebraPrintService.class));
+                        Toast.makeText(AddActivity.this, "Starting Print Service",Toast.LENGTH_SHORT).show();
+                    }
+                }, 2000);
+            break;
         }
         return super.onMenuItemSelected(featureId, item);
     }
@@ -211,17 +238,19 @@ public class AddActivity extends Activity
     @SuppressLint("MissingPermission")
     private void findPrinters()
     {
+        mStoredList = mDb.getAllPrinters();
+
         //Find USB Printers
         findUsbPrinters();
 
         //Add any Network Printers
         findNetPrinter();
 
-        //Find already paired devices.
-        findPairedBluetooth();
+        if (mBluetoothAdapter != null && !mBluetoothAdapter.isDiscovering())
+            mBluetoothAdapter.startDiscovery();
 
-        if (mBluetoothAdapter != null && !mBluetoothAdapter.isDiscovering()) mBluetoothAdapter.startDiscovery();
-        mStoredList = mDb.getAllPrinters();
+       //Find already paired devices.
+        findPairedBluetooth();
     }
 
     /***********************************************************************************************/
@@ -650,5 +679,9 @@ public class AddActivity extends Activity
             if (DEBUG) Log.i(TAG,"Stopped Expiry Thread");
         }
     };
+
+
+
+    /***********************************************************************************************/
 
 }

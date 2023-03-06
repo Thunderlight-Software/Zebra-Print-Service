@@ -51,6 +51,14 @@ public class ZebraDiscoverySession extends PrinterDiscoverySession
             if (bFound == false) removePrinters(Collections.singletonList(printer.getId()));
         }
 
+        // Remove all existing printers
+        // TODO: check why actual printers get a pb when re discovered
+        List<PrinterInfo> printersList = getPrinters();
+        ArrayList<PrinterId> printersIds = new ArrayList<>(printersList.size());
+        for(PrinterInfo printInfo : printersList)
+            printersIds.add(printInfo.getId());
+        removePrinters(printersIds);
+
         //Add Printers from database
         int iReqCode =1;
         for (PrinterDatabase.Printer printer : printers)
@@ -61,7 +69,7 @@ public class ZebraDiscoverySession extends PrinterDiscoverySession
             {
                 Intent i = new Intent(mService,PrinterInfoActivity.class);
                 i.putExtra("printer", Parcels.wrap(printer));
-                PendingIntent pi = PendingIntent.getActivity(mService,iReqCode,i,PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                PendingIntent pi = PendingIntent.getActivity(mService,iReqCode,i,PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
                 if (DEBUG) Log.i(TAG,"Adding Printer:" + printerId.getLocalId());
                 PrinterInfo.Builder builder = new PrinterInfo.Builder(printerId, printer.mName,print.isAvailable() ? PrinterInfo.STATUS_IDLE : PrinterInfo.STATUS_UNAVAILABLE)
                         .setIconResourceId(R.drawable.ic_printer)

@@ -15,6 +15,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
 import com.zebra.zebraprintservice.BuildConfig;
 import com.zebra.zebraprintservice.connection.PrinterConnection;
 import com.zebra.zebraprintservice.connection.ZebraBluetoothPrinter;
@@ -53,6 +54,8 @@ public class ZebraPrintService extends PrintService
         if (DEBUG) Log.d(TAG, "onCreate() ");
         super.onCreate();
         ManagedConfigurationHelper.readConfigFromManagedConfiguration(this);
+        // Initialize PDFBOX
+        PDFBoxResourceLoader.init(getApplicationContext());
     }
 
     /**********************************************************************************************/

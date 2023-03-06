@@ -22,6 +22,7 @@
     <string name="add_printer">Add Printer</string>
     <string name="service_version">Service Version</string>
     <string name="remove_all_printers">Remove all printers</string>
+    <string name="restart_printservice">Restart To Force re-Discovery</string>
     <string name="bluetooth">Bluetooth Printer</string>
     <string name="network">Network Printer</string>
     <string name="usb">USB Connected Printer</string>
@@ -40,7 +41,9 @@
     <string name="print">Print</string>
     <string name="unreadable_input">Input unreadable</string>
     <string name="width">Width:</string>
+    <string name="jpgquality">Jpg Quality:</string>
     <string name="height">Height:</string>
+    <string name="topmargin">Top Margin:</string>
     <string name="media_size">Media size in Inches:</string>
     <string name="submit">Submit</string>
     <string name="printer_name">Printer name:</string>
