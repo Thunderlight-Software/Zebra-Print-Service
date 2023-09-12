@@ -27,6 +27,9 @@ public class ZebraFilePrinter extends PrinterConnection
         if (DEBUG) Log.i(TAG,"Creating File Printer -> " + printer.mWidth + "x" + printer.mHeight + " DPI:" + printer.mDPI);
         mPrinter = printer;
         mCtx = ctx;
+        PrinterDatabase mDb = new PrinterDatabase(mCtx);
+        mDb.updatePrinter(printer);
+        mDb.close();
     }
 
     /*********************************************************************************************/

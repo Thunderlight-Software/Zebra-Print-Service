@@ -7,7 +7,10 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
+import android.print.PrinterInfo;
 import android.util.Xml;
+
+import com.zebra.zebraprintservice.service.ZebraPrinter;
 
 import org.parceler.Parcel;
 import org.xmlpull.v1.XmlPullParser;
@@ -126,6 +129,28 @@ public class PrinterDatabase
     }
 
     /**********************************************************************************************/
+    private ContentValues populateValues(PrinterInfo item, PrinterDatabase.Printer zprinter)
+    {
+        ContentValues Values = new ContentValues();
+        Values.put(KEY_PRINTERID, item.getId().toString());
+        Values.put(KEY_NAME, item.getName());
+        Values.put(KEY_PRINTER, zprinter.mPrinter);
+        Values.put(KEY_DESCRIPTION, item.getDescription());
+        Values.put(KEY_TYPE, zprinter.mType);
+        Values.put(KEY_ADDRESS, zprinter.mAddress);
+        Values.put(KEY_PORT, zprinter.mPort);
+        Values.put(KEY_DPI, zprinter.mDPI);
+        Values.put(KEY_WIDTH, zprinter.mWidth);
+        Values.put(KEY_HEIGHT, zprinter.mHeight);
+        Values.put(KEY_VARIABLE_LENGTH, zprinter.mVariableLengthEnabled);
+        Values.put(KEY_TOPMARGIN, zprinter.mVariableLengthTopMargin);
+        Values.put(KEY_JPGQUALITY, zprinter.mJpegQuality);
+        Values.put(KEY_MODIFIED,zprinter.mTimeStamp.getTime());
+        Values.put(KEY_LANGUAGE,zprinter.mLanguage);
+        return Values;
+    }
+
+    /**********************************************************************************************/
     private ArrayList<Printer> getItems(Cursor c)
     {
         ArrayList<Printer> mItems = new ArrayList<Printer>();
@@ -161,6 +186,12 @@ public class PrinterDatabase
     public void replacePrinter(Printer item)
     {
         ContentValues Values = populateValues(item);
+        mDbHelper.getWritableDatabase().replace(DB_TABLE,null,Values);
+    }
+
+    public void replacePrinter(PrinterInfo sysPrinter, Printer dbPrinter)
+    {
+        ContentValues Values = populateValues(sysPrinter, dbPrinter);
         mDbHelper.getWritableDatabase().replace(DB_TABLE,null,Values);
     }
 

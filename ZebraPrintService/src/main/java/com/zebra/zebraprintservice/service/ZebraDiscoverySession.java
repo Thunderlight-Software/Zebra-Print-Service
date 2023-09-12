@@ -41,23 +41,36 @@ public class ZebraDiscoverySession extends PrinterDiscoverySession
 
         //Remove Any Printers not in Database
         List<PrinterInfo> mCurrentList = getPrinters();
+
+
+        if (DEBUG) Log.d(TAG, "Printers in stystem:" + mCurrentList.size());
         for (PrinterInfo printer : mCurrentList)
         {
+            if (DEBUG) Log.d(TAG, "------------------------------------------");
+            if (DEBUG) Log.d(TAG, "Printers ID:" + printer.getId());
             boolean bFound = false;
             for (PrinterDatabase.Printer stored : printers)
             {
-                if (stored.mPrinterId.equals(printer.getId())) bFound = true;
+                if (DEBUG) Log.d(TAG, "Stored ID:" + stored.mPrinterId);
+                if (stored.mPrinterId.equals(printer.getId()))
+                {
+                    bFound = true;
+                    if (DEBUG) Log.d(TAG, "Found ID:" + stored.mPrinterId);
+                    mDb.replacePrinter(printer, stored);
+                }
             }
-            if (bFound == false) removePrinters(Collections.singletonList(printer.getId()));
+            if (DEBUG) Log.d(TAG, "------------------------------------------");
+            if (bFound == false)
+                removePrinters(Collections.singletonList(printer.getId()));
         }
 
         // Remove all existing printers
         // TODO: check why actual printers get a pb when re discovered
-        List<PrinterInfo> printersList = getPrinters();
-        ArrayList<PrinterId> printersIds = new ArrayList<>(printersList.size());
-        for(PrinterInfo printInfo : printersList)
-            printersIds.add(printInfo.getId());
-        removePrinters(printersIds);
+        //List<PrinterInfo> printersList = getPrinters();
+        //ArrayList<PrinterId> printersIds = new ArrayList<>(printersList.size());
+        //for(PrinterInfo printInfo : printersList)
+        //    printersIds.add(printInfo.getId());
+        //removePrinters(printersIds);
 
         //Add Printers from database
         int iReqCode =1;

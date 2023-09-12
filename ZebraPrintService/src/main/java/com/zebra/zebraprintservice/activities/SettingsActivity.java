@@ -2,12 +2,15 @@ package com.zebra.zebraprintservice.activities;
 
 import androidx.annotation.NonNull;
 
+import android.Manifest;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -33,6 +36,24 @@ public class SettingsActivity extends Activity
     private final static int REQUEST_CODE_EXPORT = 2;
     private final static int REQUEST_CODE_IMPORT = 3;
     private PrinterDatabase mDb;
+
+    private static ArrayList<String> ZEBRA_PRINTSERVICE_PERMISSIONS_LIST = new ArrayList<String>(){{
+        add(Manifest.permission.ACCESS_WIFI_STATE);
+        add(Manifest.permission.INTERNET);
+        add(Manifest.permission.BLUETOOTH_ADMIN);
+        add(Manifest.permission.BLUETOOTH);
+        add(Manifest.permission.ACCESS_FINE_LOCATION);
+        add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        add(Manifest.permission.WAKE_LOCK);
+        add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    }};
+
+    private static final ArrayList<String>  ZEBRA_PRINTSERVICE_PERMISSIONS_LIST_A12 = new ArrayList<String>(){{
+        add(Manifest.permission.BLUETOOTH_CONNECT);
+        add(Manifest.permission.BLUETOOTH_SCAN);
+        addAll(ZEBRA_PRINTSERVICE_PERMISSIONS_LIST);
+    }};
+
 
     /***********************************************************************************************/
     @Override
@@ -153,7 +174,21 @@ public class SettingsActivity extends Activity
         try
         {
             PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_PERMISSIONS);
-            String[] requestedPermissions = packageInfo.requestedPermissions;
+            //Get Permissions
+            String[] requestedPermissions = null;
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            {
+                requestedPermissions = new String[ZEBRA_PRINTSERVICE_PERMISSIONS_LIST_A12.size()];
+                ZEBRA_PRINTSERVICE_PERMISSIONS_LIST_A12.toArray(requestedPermissions);
+            }
+            else
+            {
+                requestedPermissions = new String[ZEBRA_PRINTSERVICE_PERMISSIONS_LIST.size()];
+                ZEBRA_PRINTSERVICE_PERMISSIONS_LIST.toArray(requestedPermissions);
+            }
+
+
             List<String> neededPermissions = new ArrayList<String>();
             if(requestedPermissions != null)
             {
@@ -175,7 +210,19 @@ public class SettingsActivity extends Activity
             PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_PERMISSIONS);
 
             //Get Permissions
-            String[] requestedPermissions = packageInfo.requestedPermissions;
+            String[] requestedPermissions = null;
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            {
+                requestedPermissions = new String[ZEBRA_PRINTSERVICE_PERMISSIONS_LIST_A12.size()];
+                ZEBRA_PRINTSERVICE_PERMISSIONS_LIST_A12.toArray(requestedPermissions);
+            }
+            else
+            {
+                requestedPermissions = new String[ZEBRA_PRINTSERVICE_PERMISSIONS_LIST.size()];
+                ZEBRA_PRINTSERVICE_PERMISSIONS_LIST.toArray(requestedPermissions);
+            }
+
             List<String> neededPermissions = new ArrayList<String>();
 
             if(requestedPermissions != null)

@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 32
-    ndkVersion "21.0.6113669"
+    //ndkVersion "21.0.6113669"
+    ndkVersion "23.1.7779620"
     defaultConfig {
+        compileSdk 34
         applicationId "com.zebra.zebraprintservice"
-        minSdkVersion 24
-        targetSdkVersion 32
+        minSdkVersion 30
         versionCode 30
         versionName "1.2.0"
         externalNativeBuild {
@@ -41,6 +41,7 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
+    namespace 'com.zebra.zebraprintservice'
 }
 
 dependencies {
