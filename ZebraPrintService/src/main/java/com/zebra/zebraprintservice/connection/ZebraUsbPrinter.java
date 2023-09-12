@@ -49,6 +49,11 @@ public class ZebraUsbPrinter extends PrinterConnection
         mUsbManager =  (UsbManager) mCtx.getSystemService(Context.USB_SERVICE);
         mPermissionIntent = PendingIntent.getBroadcast(mCtx, 0, new Intent(ACTION_USB_PERMISSION), 0);
         mHandler = new Handler(mCtx.getMainLooper());
+
+        PrinterDatabase mDb = new PrinterDatabase(mCtx);
+        mDb.updatePrinter(printer);
+        mDb.close();
+
         mCtx.registerReceiver(UsbReciever,new IntentFilter(ACTION_USB_PERMISSION));
 
         if (mUsbManager != null)

@@ -40,6 +40,9 @@ public class ZebraBluetoothPrinter extends PrinterConnection
         mBluetoothManager = (BluetoothManager) mCtx.getSystemService(Context.BLUETOOTH_SERVICE);
         if (mBluetoothManager != null) mBluetoothAdapter = mBluetoothManager.getAdapter();
         if (mBluetoothAdapter != null) mDevice = mBluetoothAdapter.getRemoteDevice(printer.mAddress);
+        PrinterDatabase mDb = new PrinterDatabase(mCtx);
+        mDb.updatePrinter(printer);
+        mDb.close();
      }
 
     /*********************************************************************************************/

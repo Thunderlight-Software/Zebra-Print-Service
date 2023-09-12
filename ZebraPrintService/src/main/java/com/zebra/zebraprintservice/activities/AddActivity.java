@@ -121,7 +121,7 @@ public class AddActivity extends Activity
         setContentView(R.layout.activity_add);
         overridePendingTransition(0,0);
         ActionBar actionBar = getActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(true);
+        if(actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true);
         mDb = new PrinterDatabase(this);
         mListView = findViewById(R.id.printerList);
         results = new ArrayList<>();
